@@ -74,9 +74,6 @@ def harden_app(app):
     def ratelimit_handler(e):
         app.logger.warning(f"Rate limit exceeded for {get_remote_address()}: {e}")
         return {"error": "Rate limit exceeded", "retry_after": e.retry_after}, 429
-    
-    # Return limiter for per-route usage
-    return limiter
 
     if USE_REPLIT_AUTH:
         @app.before_request
@@ -85,3 +82,6 @@ def harden_app(app):
             if request.method in ("POST", "PUT", "PATCH", "DELETE"):
                 if not get_replit_user(request):
                     abort(401)
+    
+    # Return limiter for per-route usage
+    return limiter

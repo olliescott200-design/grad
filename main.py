@@ -315,6 +315,7 @@ def auth_required():
 
 
 @app.route('/submit', methods=['GET', 'POST'])
+@limiter.limit("30 per hour")  # Stricter limit for data modification
 def submit():
     # Check if user is authenticated
     current_user = get_current_user()
