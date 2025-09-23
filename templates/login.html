@@ -14,23 +14,38 @@
             <p class="text-muted">Welcome back to GradGuide</p>
           </div>
 
-          {% with messages = get_flashed_messages() %}
+          {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-              {% for message in messages %}
-                <div class="alert alert-danger" role="alert">{{ message }}</div>
+              {% for category, message in messages %}
+                <div class="alert alert-{% if category == 'error' %}danger{% else %}{{ category }}{% endif %} alert-dismissible fade show" role="alert">
+                  <i class="bi bi-{% if category == 'error' %}exclamation-triangle{% elif category == 'success' %}check-circle{% else %}info-circle{% endif %} me-2"></i>
+                  {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
               {% endfor %}
             {% endif %}
           {% endwith %}
 
           <form method="POST">
+            {{ csrf_token() }}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            {% if request.args.get('next') %}
+              <input type="hidden" name="next" value="{{ request.args.get('next') }}">
+            {% endif %}
+            
             <div class="mb-3">
-              <label for="username" class="form-label">Username</label>
-              <input type="text" class="form-control form-control-lg" id="username" name="username" required>
+              <label for="login" class="form-label">Username or Email</label>
+              <input type="text" class="form-control form-control-lg" id="login" name="login" 
+                     placeholder="Enter your username or email"
+                     required autocomplete="username">
             </div>
 
             <div class="mb-4">
               <label for="password" class="form-label">Password</label>
-              <input type="password" class="form-control form-control-lg" id="password" name="password" required>
+              <input type="password" class="form-control form-control-lg" id="password" name="password"
+                     placeholder="Enter your password"
+                     required autocomplete="current-password">
             </div>
 
             <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">

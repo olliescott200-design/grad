@@ -14,33 +14,66 @@
             <p class="text-muted">Join the GradGuide community</p>
           </div>
 
-          {% with messages = get_flashed_messages() %}
+          {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-              {% for message in messages %}
-                <div class="alert alert-danger" role="alert">{{ message }}</div>
+              {% for category, message in messages %}
+                <div class="alert alert-{% if category == 'error' %}danger{% else %}{{ category }}{% endif %} alert-dismissible fade show" role="alert">
+                  <i class="bi bi-{% if category == 'error' %}exclamation-triangle{% elif category == 'success' %}check-circle{% else %}info-circle{% endif %} me-2"></i>
+                  {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
               {% endfor %}
             {% endif %}
           {% endwith %}
 
           <form method="POST">
-            <div class="mb-3">
-              <label for="username" class="form-label">Username</label>
-              <input type="text" class="form-control form-control-lg" id="username" name="username" required>
+            {{ csrf_token() }}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="first_name" class="form-label">First Name</label>
+                <input type="text" class="form-control form-control-lg" id="first_name" name="first_name"
+                       placeholder="Enter your first name" autocomplete="given-name">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="last_name" class="form-label">Last Name</label>
+                <input type="text" class="form-control form-control-lg" id="last_name" name="last_name"
+                       placeholder="Enter your last name" autocomplete="family-name">
+              </div>
             </div>
 
             <div class="mb-3">
-              <label for="email" class="form-label">Email</label>
-              <input type="email" class="form-control form-control-lg" id="email" name="email" required>
+              <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+              <input type="email" class="form-control form-control-lg" id="email" name="email" 
+                     placeholder="Enter your email address"
+                     required autocomplete="email">
             </div>
 
             <div class="mb-3">
-              <label for="password" class="form-label">Password</label>
-              <input type="password" class="form-control form-control-lg" id="password" name="password" required minlength="6">
+              <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-lg" id="username" name="username"
+                     placeholder="Choose a username (3-50 characters)"
+                     pattern="[a-zA-Z0-9_-]+"
+                     title="Username can only contain letters, numbers, hyphens, and underscores"
+                     required autocomplete="username">
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+              <input type="password" class="form-control form-control-lg" id="password" name="password" 
+                     placeholder="Create a secure password"
+                     minlength="8" required autocomplete="new-password">
+              <div class="form-text">
+                <small>Password must be at least 8 characters with uppercase, lowercase, and numbers.</small>
+              </div>
             </div>
 
             <div class="mb-4">
-              <label for="confirm_password" class="form-label">Confirm Password</label>
-              <input type="password" class="form-control form-control-lg" id="confirm_password" name="confirm_password" required minlength="6">
+              <label for="confirm_password" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+              <input type="password" class="form-control form-control-lg" id="confirm_password" name="confirm_password"
+                     placeholder="Confirm your password"
+                     minlength="8" required autocomplete="new-password">
             </div>
 
             <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
