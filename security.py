@@ -50,8 +50,10 @@ def harden_app(app):
         content_security_policy={
             "default-src": ["'self'"],
             "img-src": ["'self'", "data:"],
-            "style-src": ["'self'", "'unsafe-inline'"],
-            "script-src": ["'self'"],
+            "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
+            "script-src": ["'self'", "https://cdn.jsdelivr.net"],
+            "font-src": ["'self'", "https://fonts.gstatic.com"],
+            "connect-src": ["'self'"],
         },
         frame_options="DENY",
         referrer_policy="no-referrer",
