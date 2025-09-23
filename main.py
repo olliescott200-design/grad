@@ -94,7 +94,7 @@ def is_helpful_advice(advice_text: str) -> bool:
 data_file = 'submissions.json'
 
 app = Flask(__name__)
-harden_app(app)
+limiter = harden_app(app)
 
 # Validate SECRET_KEY is properly set
 secret_key = app.config.get("SECRET_KEY")

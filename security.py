@@ -60,8 +60,23 @@ def harden_app(app):
         session_cookie_http_only=True
     )
 
-    # Basic rate limiting
-    Limiter(get_remote_address, app=app, default_limits=["200/day", "60/hour"])
+    # Basic rate limiting with better configuration
+    limiter = Limiter(
+        get_remote_address, 
+        app=app, 
+        default_limits=["200/day", "60/hour"],
+        storage_uri="memory://",
+        strategy="fixed-window"
+    )
+    
+    # Custom error handler for rate limiting
+    @app.errorhandler(429)
+    def ratelimit_handler(e):
+        app.logger.warning(f"Rate limit exceeded for {get_remote_address()}: {e}")
+        return {"error": "Rate limit exceeded", "retry_after": e.retry_after}, 429
+    
+    # Return limiter for per-route usage
+    return limiter
 
     if USE_REPLIT_AUTH:
         @app.before_request
