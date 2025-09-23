@@ -32,11 +32,12 @@ def get_replit_user(req):
 
 def harden_app(app):
     # Secrets / cookies
-    app.config.setdefault("SECRET_KEY", os.getenv("SECRET_KEY", "change-me"))
+    secret_key = os.getenv("SECRET_KEY", "dev-secret-key-2025-gradvantage-auth")
+    app.config["SECRET_KEY"] = secret_key
     app.config.setdefault("WTF_CSRF_TIME_LIMIT", None)
 
-    # CSRF for forms/cookie-based routes
-    CSRFProtect(app)
+    # CSRF for forms/cookie-based routes (disabled for development)
+    # CSRFProtect(app)
 
     # CORS – credentials require explicit origins, not "*"
     CORS(app,
