@@ -19,85 +19,11 @@
           </button>
         </div>
       </div>
-      <div class="col-md-4 text-md-end">
-        {% if stats %}
-          <div class="d-flex flex-wrap gap-2 justify-content-md-end">
-            <span class="badge bg-primary fs-6">{{ stats.total_entries }} experiences</span>
-            {% if stats.avg_salary %}
-              <span class="badge bg-success fs-6">${{ "{:,}".format(stats.avg_salary) }} avg</span>
-            {% endif %}
-          </div>
-        {% endif %}
-      </div>
     </div>
   </div>
 
   
 
-  {% if stats %}
-    <!-- Statistics Overview -->
-    <div class="row mb-5 g-4">
-      <div class="col-md-3">
-        <div class="card text-center h-100">
-          <div class="card-body">
-            <div class="display-6 fw-bold text-primary">{{ stats.total_entries }}</div>
-            <div class="text-muted">Total Experiences</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card text-center h-100">
-          <div class="card-body">
-            <div class="display-6 fw-bold text-success">{{ stats.success_rate }}%</div>
-            <div class="text-muted">Success Rate</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card text-center h-100">
-          <div class="card-body">
-            {% if stats.avg_salary %}
-              <div class="display-6 fw-bold text-warning">${{ "{:,}".format(stats.avg_salary) }}</div>
-            {% else %}
-              <div class="display-6 fw-bold text-muted">N/A</div>
-            {% endif %}
-            <div class="text-muted">Average Salary</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card text-center h-100">
-          <div class="card-body">
-            <div class="display-6 fw-bold text-info">{{ stats.roles|length }}</div>
-            <div class="text-muted">Different Roles</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- University Representation -->
-    {% if stats.university_breakdown %}
-      <div class="card mb-5">
-        <div class="card-body">
-          <h4 class="card-title mb-3">University Representation</h4>
-          <p class="text-muted mb-4">Historical graduate intake by university</p>
-          <div class="row">
-            {% for uni, percentage in stats.university_breakdown.items() %}
-              <div class="col-md-6 mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span>{{ uni }}</span>
-                  <span class="fw-bold">{{ percentage }}%</span>
-                </div>
-                <div class="progress" style="height: 10px;">
-                  <div class="progress-bar" role="progressbar" style="width: {{ percentage }}%" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-              </div>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-    {% endif %}
-  {% endif %}
 
   <!-- Analytics Section - Collapsible -->
   <div class="collapse mb-5" id="analyticsSection">
