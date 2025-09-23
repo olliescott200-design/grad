@@ -8,10 +8,12 @@ from collections import defaultdict, Counter
 from grad_data import load_cards, load_grad_signals
 from grad_data_v2 import load_cards as load_cards_v2
 from legal_config import LEGAL_CONFIG, NOT_ADVICE_DISCLAIMER
-from db_auth import (get_current_user, login_required, get_user_applications,
+from db_auth import (get_user_applications,
                      create_application, update_application,
                      delete_application, get_all_submissions,
                      create_submission, get_all_applications)
+from auth_utils import (get_current_user, login_required, create_user, 
+                       authenticate_user, login_user, logout_user)
 from extractors import FIRM_ALIASES
 from security import harden_app, get_replit_user
 
@@ -312,6 +314,78 @@ def health():
 @app.route('/auth_required')
 def auth_required():
     return render_template('auth_required.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")  # Rate limit login attempts
+def login():
+    # If user is already logged in, redirect to home
+    if get_current_user():
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        login_input = request.form.get('login', '').strip()
+        password = request.form.get('password', '')
+        
+        if not login_input or not password:
+            flash('Please enter both username/email and password.', 'error')
+            return render_template('login.html')
+        
+        # Authenticate user
+        user = authenticate_user(login_input, password)
+        if user:
+            login_user(user['id'])
+            flash(f'Welcome back, {user["first_name"] or user["username"]}!', 'success')
+            
+            # Redirect to next page or home
+            next_page = request.form.get('next') or request.args.get('next')
+            if next_page:
+                return redirect(next_page)
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid username/email or password. Account may be locked after 5 failed attempts.', 'error')
+    
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")  # Rate limit registration attempts  
+def register():
+    # If user is already logged in, redirect to home
+    if get_current_user():
+        return redirect(url_for('index'))
+        
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        first_name = request.form.get('first_name', '').strip()
+        last_name = request.form.get('last_name', '').strip()
+        
+        # Validation
+        if not all([email, username, password, confirm_password]):
+            flash('Please fill in all required fields.', 'error')
+            return render_template('register.html')
+            
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('register.html')
+        
+        # Create user
+        success, result = create_user(email, username, password, first_name, last_name)
+        
+        if success:
+            flash('Account created successfully! Please log in.', 'success')
+            return redirect(url_for('login'))
+        else:
+            flash(result, 'error')  # result contains error message
+            
+    return render_template('register.html')
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    flash('You have been logged out successfully.', 'success')
+    return redirect(url_for('index'))
 
 
 @app.route('/submit', methods=['GET', 'POST'])
