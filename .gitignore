@@ -1,0 +1,9 @@
+attached_assets/
+.env
+__pycache__/
+*.py[cod]
+.venv/
+*.sqlite
+node_modules/
+.next/
+dist/

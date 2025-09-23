@@ -11,6 +11,10 @@ flask = "^3.1.1"
 pandas = "^2.3.1"
 werkzeug = "^3.1.3"
 psycopg2-binary = "^2.9.10"
+flask-wtf = "^1.2.2"
+flask-cors = "^6.0.1"
+flask-talisman = "^1.1.0"
+flask-limiter = "^3.13"
 
 [tool.pyright]
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md

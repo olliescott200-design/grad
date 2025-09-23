@@ -8,77 +8,85 @@ from collections import defaultdict, Counter
 from grad_data import load_cards, load_grad_signals
 from grad_data_v2 import load_cards as load_cards_v2
 from legal_config import LEGAL_CONFIG, NOT_ADVICE_DISCLAIMER
-from db_auth import (
-    get_current_user, login_required, get_user_applications, 
-    create_application, update_application, delete_application,
-    get_all_submissions, create_submission, get_all_applications
-)
+from db_auth import (get_current_user, login_required, get_user_applications,
+                     create_application, update_application,
+                     delete_application, get_all_submissions,
+                     create_submission, get_all_applications)
 from extractors import FIRM_ALIASES
+from security import harden_app, get_replit_user
+
 
 def normalize_company_name(company_name: str) -> str:
     """Normalize company name using firm aliases to handle spaces, nicknames, and variations."""
     if not company_name:
         return company_name
-    
+
     # Clean the input
     normalized_input = company_name.strip().lower()
-    
+
     # Check for exact matches in canonical names
     for canonical_name in FIRM_ALIASES.keys():
         if canonical_name.lower() == normalized_input:
             return canonical_name
-    
+
     # Check against aliases
     for canonical_name, aliases in FIRM_ALIASES.items():
         for alias in aliases:
             if alias.lower() == normalized_input:
                 return canonical_name
-    
+
     # Handle common spacing variations
-    normalized_spaced = normalized_input.replace('&', ' & ').replace('+', ' + ')
+    normalized_spaced = normalized_input.replace('&',
+                                                 ' & ').replace('+', ' + ')
     normalized_spaced = ' '.join(normalized_spaced.split())  # Normalize spaces
-    
+
     for canonical_name, aliases in FIRM_ALIASES.items():
         # Check canonical with normalized spacing
-        if canonical_name.lower().replace('&', ' & ').replace('+', ' + ') == normalized_spaced:
+        if canonical_name.lower().replace('&', ' & ').replace(
+                '+', ' + ') == normalized_spaced:
             return canonical_name
         # Check aliases with normalized spacing
         for alias in aliases:
-            if alias.lower().replace('&', ' & ').replace('+', ' + ') == normalized_spaced:
+            if alias.lower().replace('&', ' & ').replace(
+                    '+', ' + ') == normalized_spaced:
                 return canonical_name
-    
+
     # Return original if no match found (but title case it)
     return company_name.strip().title()
+
 
 def is_helpful_advice(advice_text: str) -> bool:
     """Check if advice text is actually helpful and actionable."""
     if not advice_text or len(advice_text.strip()) < 20:
         return False
-    
+
     advice_lower = advice_text.lower()
-    
+
     # Exclude questions
-    if (advice_text.strip().endswith('?') or 
-        any(q in advice_lower for q in ['does that mean', 'what does', 'how does', 'why does', 
-                                        'is it', 'are they', 'do you', 'did you', 'have you',
-                                        'will they', 'would you', 'can you', 'could you',
-                                        'i wonder', 'wondering if'])):
+    if (advice_text.strip().endswith('?') or any(q in advice_lower for q in [
+            'does that mean', 'what does', 'how does', 'why does', 'is it',
+            'are they', 'do you', 'did you', 'have you', 'will they',
+            'would you', 'can you', 'could you', 'i wonder', 'wondering if'
+    ])):
         return False
-    
+
     # Exclude non-actionable statements
-    if any(na in advice_lower for na in ['i think', 'i believe', 'in my opinion', 
-                                         'it seems', 'appears to be', 'i heard', 'rumor', 
-                                         'supposedly', 'allegedly', 'not sure if', 'unclear',
-                                         'partnership doesn\'t have', 'doesn\'t mean', 
-                                         'probably', 'likely']):
+    if any(na in advice_lower for na in [
+            'i think', 'i believe', 'in my opinion', 'it seems',
+            'appears to be', 'i heard', 'rumor', 'supposedly', 'allegedly',
+            'not sure if', 'unclear', 'partnership doesn\'t have',
+            'doesn\'t mean', 'probably', 'likely'
+    ]):
         return False
-    
+
     # Must contain actionable advice indicators
-    advice_indicators = ['recommend', 'suggest', 'should', 'must', 'need to', 'make sure', 
-                        'prepare', 'practice', 'research', 'apply early', 'tailor', 
-                        'focus on', 'emphasize', 'avoid', 'don\'t', 'be sure to', 
-                        'remember to', 'consider', 'try to']
-    
+    advice_indicators = [
+        'recommend', 'suggest', 'should', 'must', 'need to', 'make sure',
+        'prepare', 'practice', 'research', 'apply early', 'tailor', 'focus on',
+        'emphasize', 'avoid', 'don\'t', 'be sure to', 'remember to',
+        'consider', 'try to'
+    ]
+
     return any(indicator in advice_lower for indicator in advice_indicators)
 
 
@@ -86,7 +94,7 @@ def is_helpful_advice(advice_text: str) -> bool:
 data_file = 'submissions.json'
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-this-in-production'  # Change this to a secure random key
+harden_app(app)
 
 data_file = 'submissions.json'
 tracker_file = 'applications.json'
@@ -94,54 +102,114 @@ tracker_file = 'applications.json'
 # University distribution data for law firms
 FIRM_UNIVERSITY_DATA = {
     'Allens': {
-        'University of Melbourne': 25, 'Monash University': 10, 'University of Sydney': 20,
-        'UNSW': 15, 'University of Queensland': 10, 'Australian National University': 10,
-        'Macquarie University': 5, 'University of Adelaide': 2, 'Other': 3
+        'University of Melbourne': 25,
+        'Monash University': 10,
+        'University of Sydney': 20,
+        'UNSW': 15,
+        'University of Queensland': 10,
+        'Australian National University': 10,
+        'Macquarie University': 5,
+        'University of Adelaide': 2,
+        'Other': 3
     },
     'Clayton Utz': {
-        'University of Melbourne': 20, 'Monash University': 15, 'University of Sydney': 20,
-        'UNSW': 15, 'University of Queensland': 10, 'Australian National University': 10,
-        'Macquarie University': 5, 'University of Adelaide': 3, 'Other': 2
+        'University of Melbourne': 20,
+        'Monash University': 15,
+        'University of Sydney': 20,
+        'UNSW': 15,
+        'University of Queensland': 10,
+        'Australian National University': 10,
+        'Macquarie University': 5,
+        'University of Adelaide': 3,
+        'Other': 2
     },
     'Herbert Smith Freehills': {
-        'University of Melbourne': 25, 'Monash University': 10, 'University of Sydney': 20,
-        'UNSW': 15, 'University of Queensland': 10, 'Australian National University': 10,
-        'Macquarie University': 5, 'University of Adelaide': 2, 'Other': 3
+        'University of Melbourne': 25,
+        'Monash University': 10,
+        'University of Sydney': 20,
+        'UNSW': 15,
+        'University of Queensland': 10,
+        'Australian National University': 10,
+        'Macquarie University': 5,
+        'University of Adelaide': 2,
+        'Other': 3
     },
     'Ashurst': {
-        'University of Melbourne': 20, 'Monash University': 15, 'University of Sydney': 20,
-        'UNSW': 15, 'University of Queensland': 10, 'Australian National University': 10,
-        'Macquarie University': 5, 'University of Adelaide': 2, 'Other': 3
+        'University of Melbourne': 20,
+        'Monash University': 15,
+        'University of Sydney': 20,
+        'UNSW': 15,
+        'University of Queensland': 10,
+        'Australian National University': 10,
+        'Macquarie University': 5,
+        'University of Adelaide': 2,
+        'Other': 3
     },
     'MinterEllison': {
-        'University of Melbourne': 15, 'Monash University': 20, 'University of Sydney': 15,
-        'UNSW': 15, 'University of Queensland': 10, 'Australian National University': 10,
-        'Macquarie University': 10, 'University of Adelaide': 2, 'Other': 3
+        'University of Melbourne': 15,
+        'Monash University': 20,
+        'University of Sydney': 15,
+        'UNSW': 15,
+        'University of Queensland': 10,
+        'Australian National University': 10,
+        'Macquarie University': 10,
+        'University of Adelaide': 2,
+        'Other': 3
     },
     'King & Wood Mallesons': {
-        'University of Melbourne': 25, 'Monash University': 10, 'University of Sydney': 25,
-        'UNSW': 15, 'University of Queensland': 10, 'Australian National University': 10,
-        'Macquarie University': 2, 'University of Adelaide': 1, 'Other': 2
+        'University of Melbourne': 25,
+        'Monash University': 10,
+        'University of Sydney': 25,
+        'UNSW': 15,
+        'University of Queensland': 10,
+        'Australian National University': 10,
+        'Macquarie University': 2,
+        'University of Adelaide': 1,
+        'Other': 2
     },
     'Corrs Chambers Westgarth': {
-        'University of Melbourne': 20, 'Monash University': 15, 'University of Sydney': 20,
-        'UNSW': 15, 'University of Queensland': 10, 'Australian National University': 10,
-        'Macquarie University': 5, 'University of Adelaide': 2, 'Other': 3
+        'University of Melbourne': 20,
+        'Monash University': 15,
+        'University of Sydney': 20,
+        'UNSW': 15,
+        'University of Queensland': 10,
+        'Australian National University': 10,
+        'Macquarie University': 5,
+        'University of Adelaide': 2,
+        'Other': 3
     },
     'Gilbert + Tobin': {
-        'University of Melbourne': 10, 'Monash University': 5, 'University of Sydney': 30,
-        'UNSW': 30, 'University of Queensland': 5, 'Australian National University': 10,
-        'Macquarie University': 5, 'University of Adelaide': 1, 'Other': 4
+        'University of Melbourne': 10,
+        'Monash University': 5,
+        'University of Sydney': 30,
+        'UNSW': 30,
+        'University of Queensland': 5,
+        'Australian National University': 10,
+        'Macquarie University': 5,
+        'University of Adelaide': 1,
+        'Other': 4
     },
     'Lander & Rogers': {
-        'University of Melbourne': 35, 'Monash University': 25, 'University of Sydney': 5,
-        'UNSW': 5, 'University of Queensland': 5, 'Australian National University': 10,
-        'Macquarie University': 5, 'University of Adelaide': 5, 'Other': 5
+        'University of Melbourne': 35,
+        'Monash University': 25,
+        'University of Sydney': 5,
+        'UNSW': 5,
+        'University of Queensland': 5,
+        'Australian National University': 10,
+        'Macquarie University': 5,
+        'University of Adelaide': 5,
+        'Other': 5
     },
     'Colin Biggers & Paisley': {
-        'University of Melbourne': 20, 'Monash University': 20, 'University of Sydney': 10,
-        'UNSW': 10, 'University of Queensland': 10, 'Australian National University': 10,
-        'Macquarie University': 10, 'University of Adelaide': 5, 'Other': 5
+        'University of Melbourne': 20,
+        'Monash University': 20,
+        'University of Sydney': 10,
+        'UNSW': 10,
+        'University of Queensland': 10,
+        'Australian National University': 10,
+        'Macquarie University': 10,
+        'University of Adelaide': 5,
+        'Other': 5
     }
 }
 
@@ -192,29 +260,50 @@ def index():
     # Calculate averages and format data
     for company_data in companies.values():
         if company_data['salary_count'] > 0:
-            company_data['avg_salary'] = int(company_data['avg_salary'] / company_data['salary_count'])
+            company_data['avg_salary'] = int(company_data['avg_salary'] /
+                                             company_data['salary_count'])
         else:
             company_data['avg_salary'] = None
 
-        company_data['success_rate'] = round((company_data['success_count'] / company_data['total_submissions']) * 100, 1)
-        company_data['recent_roles'] = list(company_data['recent_roles'])[:3]  # Show top 3 roles
+        company_data['success_rate'] = round(
+            (company_data['success_count'] / company_data['total_submissions'])
+            * 100, 1)
+        company_data['recent_roles'] = list(
+            company_data['recent_roles'])[:3]  # Show top 3 roles
 
     # Sort by number of submissions
-    sorted_companies = sorted(companies.values(), key=lambda x: x['total_submissions'], reverse=True)
+    sorted_companies = sorted(companies.values(),
+                              key=lambda x: x['total_submissions'],
+                              reverse=True)
 
     # Load firms from CSV for Explore Companies section
     firms = load_cards("out/grad_program_signals.csv")
     print(f"Loaded {len(firms)} firms from CSV")
 
     # Create a lookup dictionary for companies data
-    companies_lookup = {company['name']: company for company in sorted_companies}
+    companies_lookup = {
+        company['name']: company
+        for company in sorted_companies
+    }
 
-    return render_template('index.html', companies=companies_lookup, sorted_companies=sorted_companies, total_submissions=len(submissions), firms=firms, user_id=user_id, user_name=user_name)
+    return render_template('index.html',
+                           companies=companies_lookup,
+                           sorted_companies=sorted_companies,
+                           total_submissions=len(submissions),
+                           firms=firms,
+                           user_id=user_id,
+                           user_name=user_name)
+
+
+@app.route('/api/health')
+def health():
+    return {"status": "ok"}
 
 
 @app.route('/auth_required')
 def auth_required():
     return render_template('auth_required.html')
+
 
 @app.route('/submit', methods=['GET', 'POST'])
 def submit():
@@ -230,14 +319,15 @@ def submit():
         # Normalize company name to handle variations
         original_company = request.form['company']
         normalized_company = normalize_company_name(original_company)
-        
+
         submission_data = {
             'company': normalized_company,
             'role': request.form['role'],
             'experience_type': request.form['experience_type'],
             'theme': request.form['theme'],
             'application_stages': request.form.get('application_stages', ''),
-            'interview_experience': request.form.get('interview_experience', ''),
+            'interview_experience': request.form.get('interview_experience',
+                                                     ''),
             'assessment_centre': request.form.get('assessment_centre', ''),
             'program_structure': request.form.get('program_structure', ''),
             'salary_benefits': request.form.get('salary_benefits', ''),
@@ -254,13 +344,14 @@ def submit():
     return render_template("submit.html", user_id=user_id, user_name=user_name)
 
 
-
 @app.route('/company/<name>')
 def company_page(name):
     from categorizer import classify_text, label
 
     data = get_all_submissions()
-    company_entries = [entry for entry in data if entry['company'].lower() == name.lower()]
+    company_entries = [
+        entry for entry in data if entry['company'].lower() == name.lower()
+    ]
 
     # Load firm data from CSV
     firms = load_cards_v2("out/grad_program_signals.csv")
@@ -271,13 +362,18 @@ def company_page(name):
 
             # Load experiences for this firm
             experiences = load_grad_signals("out/grad_program_signals.csv")
-            firm_experiences = [exp for exp in experiences if exp['firm_name'].lower() == name.lower()]
+            firm_experiences = [
+                exp for exp in experiences
+                if exp['firm_name'].lower() == name.lower()
+            ]
 
             # Categorize experiences and add to firm data
             for exp in firm_experiences[:10]:  # Show top 10
                 content = exp.get("evidence_span", "")
                 if content:
-                    p, cats, details = classify_text(content, threshold=1.0, top_k=3)
+                    p, cats, details = classify_text(content,
+                                                     threshold=1.0,
+                                                     top_k=3)
                     exp["primary_cat"] = p
                     exp["cat_labels"] = [label(c) for c in cats]
 
@@ -287,7 +383,10 @@ def company_page(name):
                         # Remove any @mentions or user references
                         exp[field] = re.sub(r'@\w+', '', exp[field])
                         exp[field] = re.sub(r'User #\d+', '', exp[field])
-                        exp[field] = re.sub(r'\busername:\s*\w+', '', exp[field], flags=re.IGNORECASE)
+                        exp[field] = re.sub(r'\busername:\s*\w+',
+                                            '',
+                                            exp[field],
+                                            flags=re.IGNORECASE)
                         # Clean up multiple spaces
                         exp[field] = ' '.join(exp[field].split())
 
@@ -297,10 +396,14 @@ def company_page(name):
 
     # Calculate company stats
     if company_entries:
-        success_count = len([e for e in company_entries if e.get('outcome') == 'Success'])
+        success_count = len(
+            [e for e in company_entries if e.get('outcome') == 'Success'])
         success_rate = round((success_count / len(company_entries)) * 100, 1)
 
-        salaries = [int(e.get('salary', 0)) for e in company_entries if e.get('salary') and str(e.get('salary')).isdigit()]
+        salaries = [
+            int(e.get('salary', 0)) for e in company_entries
+            if e.get('salary') and str(e.get('salary')).isdigit()
+        ]
         avg_salary = int(sum(salaries) / len(salaries)) if salaries else None
 
         roles = list(set([e['role'] for e in company_entries]))
@@ -324,9 +427,12 @@ def company_page(name):
                 words = entry['advice'].lower().split()
                 for word in words:
                     if len(word) > 4:  # Only count meaningful words
-                        advice_keywords[word] = advice_keywords.get(word, 0) + 1
+                        advice_keywords[word] = advice_keywords.get(word,
+                                                                    0) + 1
 
-        top_advice = sorted(advice_keywords.items(), key=lambda x: x[1], reverse=True)[:5]
+        top_advice = sorted(advice_keywords.items(),
+                            key=lambda x: x[1],
+                            reverse=True)[:5]
 
         company_stats = {
             'success_rate': success_rate,
@@ -340,7 +446,11 @@ def company_page(name):
     else:
         company_stats = None
 
-    return render_template('company.html', company=name, entries=company_entries, stats=company_stats, firm_data=firm_data)
+    return render_template('company.html',
+                           company=name,
+                           entries=company_entries,
+                           stats=company_stats,
+                           firm_data=firm_data)
 
 
 @app.route('/companies')
@@ -353,13 +463,13 @@ def companies():
         company = submission['company']
         if company not in companies:
             company_data = {
-            'name': company,
-            'total_submissions': 0,
-            'success_count': 0,
-            'experiences': [],
-            'recent_roles': set(),
-            'avg_salary': 0,
-            'salary_count': 0
+                'name': company,
+                'total_submissions': 0,
+                'success_count': 0,
+                'experiences': [],
+                'recent_roles': set(),
+                'avg_salary': 0,
+                'salary_count': 0
             }
             companies[company] = company_data
 
@@ -378,18 +488,24 @@ def companies():
     # Calculate averages and format data
     for company_data in companies.values():
         if company_data['salary_count'] > 0:
-            company_data['avg_salary'] = int(company_data['avg_salary'] / company_data['salary_count'])
+            company_data['avg_salary'] = int(company_data['avg_salary'] /
+                                             company_data['salary_count'])
         else:
             company_data['avg_salary'] = None
 
-        company_data['success_rate'] = round((company_data['success_count'] / company_data['total_submissions']) * 100, 1)
-        company_data['recent_roles'] = list(company_data['recent_roles'])[:3]  # Show top 3 roles
+        company_data['success_rate'] = round(
+            (company_data['success_count'] / company_data['total_submissions'])
+            * 100, 1)
+        company_data['recent_roles'] = list(
+            company_data['recent_roles'])[:3]  # Show top 3 roles
 
         # Keep only recent experiences for display
         company_data['experiences'] = company_data['experiences'][:5]
 
     # Convert to list and sort by number of submissions
-    firms = sorted(companies.values(), key=lambda x: x['total_submissions'], reverse=True)
+    firms = sorted(companies.values(),
+                   key=lambda x: x['total_submissions'],
+                   reverse=True)
 
     return render_template("companies.html", firms=firms)
 
@@ -406,7 +522,10 @@ def api_company_analytics(company_name):
     all_applications = get_all_applications()
 
     # Filter applications for this company
-    company_apps = [app for app in all_applications if app.get('company', '').lower() == company_name.lower()]
+    company_apps = [
+        app for app in all_applications
+        if app.get('company', '').lower() == company_name.lower()
+    ]
 
     if not company_apps:
         return jsonify({'error': 'No data available'})
@@ -420,40 +539,67 @@ def api_company_analytics(company_name):
     for app in responses:
         if app.get('application_date') and app.get('response_date'):
             try:
-                app_date = datetime.strptime(app['application_date'], '%Y-%m-%d').date()
-                resp_date = datetime.strptime(app['response_date'], '%Y-%m-%d').date()
+                app_date = datetime.strptime(app['application_date'],
+                                             '%Y-%m-%d').date()
+                resp_date = datetime.strptime(app['response_date'],
+                                              '%Y-%m-%d').date()
                 response_times.append((resp_date - app_date).days)
             except:
                 pass
 
-    avg_response_time = round(sum(response_times) / len(response_times)) if response_times else 0
+    avg_response_time = round(sum(response_times) /
+                              len(response_times)) if response_times else 0
 
     # Enhanced response analytics
-    response_rate = round((len(responses) / total_apps * 100), 1) if total_apps > 0 else 0
-    offer_rate = round((len(offers) / total_apps * 100), 1) if total_apps > 0 else 0
-    
+    response_rate = round(
+        (len(responses) / total_apps * 100), 1) if total_apps > 0 else 0
+    offer_rate = round(
+        (len(offers) / total_apps * 100), 1) if total_apps > 0 else 0
+
     # Calculate stage progression rates
-    assessment_invites = len([app for app in company_apps if app.get('status') in ['Online Assessment Received', 'Phone Interview Scheduled', 'Assessment Centre Invited', 'Offered']])
-    interview_invites = len([app for app in company_apps if app.get('status') in ['Phone Interview Scheduled', 'Assessment Centre Invited', 'Offered']])
-    
-    assessment_rate = round((assessment_invites / total_apps * 100), 1) if total_apps > 0 else 0
-    interview_rate = round((interview_invites / total_apps * 100), 1) if total_apps > 0 else 0
-    
+    assessment_invites = len([
+        app for app in company_apps if app.get('status') in [
+            'Online Assessment Received', 'Phone Interview Scheduled',
+            'Assessment Centre Invited', 'Offered'
+        ]
+    ])
+    interview_invites = len([
+        app for app in company_apps if app.get('status') in
+        ['Phone Interview Scheduled', 'Assessment Centre Invited', 'Offered']
+    ])
+
+    assessment_rate = round(
+        (assessment_invites / total_apps * 100), 1) if total_apps > 0 else 0
+    interview_rate = round(
+        (interview_invites / total_apps * 100), 1) if total_apps > 0 else 0
+
     company_stats = {
-        'total_apps': total_apps,
-        'response_rate': response_rate,
-        'assessment_progression_rate': assessment_rate,
-        'interview_progression_rate': interview_rate,
-        'offer_rate': offer_rate,
-        'avg_response_time': avg_response_time,
-        'competitiveness_score': round((offer_rate / 100) * (response_rate / 100) * 100, 1) if offer_rate > 0 and response_rate > 0 else 0
+        'total_apps':
+        total_apps,
+        'response_rate':
+        response_rate,
+        'assessment_progression_rate':
+        assessment_rate,
+        'interview_progression_rate':
+        interview_rate,
+        'offer_rate':
+        offer_rate,
+        'avg_response_time':
+        avg_response_time,
+        'competitiveness_score':
+        round((offer_rate / 100) * (response_rate / 100) *
+              100, 1) if offer_rate > 0 and response_rate > 0 else 0
     }
 
     # Calculate university progression for this company
-    uni_progression = defaultdict(lambda: {
-        'Applied': 0, 'Online Assessment Received': 0, 'Phone Interview Scheduled': 0,
-        'Assessment Centre Invited': 0, 'Offered': 0
-    })
+    uni_progression = defaultdict(
+        lambda: {
+            'Applied': 0,
+            'Online Assessment Received': 0,
+            'Phone Interview Scheduled': 0,
+            'Assessment Centre Invited': 0,
+            'Offered': 0
+        })
 
     for app in company_apps:
         if app.get('university'):
@@ -469,10 +615,18 @@ def api_company_analytics(company_name):
         total_applied = stages.get('Applied', 0)
         if total_applied >= 2:  # Minimum threshold
             university_progression[uni] = {
-                'total_apps': total_applied,
-                'assessment_rate': round((stages.get('Online Assessment Received', 0) / total_applied * 100), 1) if total_applied > 0 else 0,
-                'interview_rate': round(((stages.get('Phone Interview Scheduled', 0) + stages.get('Assessment Centre Invited', 0)) / total_applied * 100), 1) if total_applied > 0 else 0,
-                'offer_rate': round((stages.get('Offered', 0) / total_applied * 100), 1) if total_applied > 0 else 0
+                'total_apps':
+                total_applied,
+                'assessment_rate':
+                round((stages.get('Online Assessment Received', 0) /
+                       total_applied * 100), 1) if total_applied > 0 else 0,
+                'interview_rate':
+                round(((stages.get('Phone Interview Scheduled', 0) +
+                        stages.get('Assessment Centre Invited', 0)) /
+                       total_applied * 100), 1) if total_applied > 0 else 0,
+                'offer_rate':
+                round((stages.get('Offered', 0) / total_applied *
+                       100), 1) if total_applied > 0 else 0
             }
 
     return jsonify({
@@ -488,7 +642,10 @@ def api_company_insights(company_name):
     all_applications = get_all_applications()
 
     # Filter applications for this company
-    company_apps = [app for app in all_applications if app.get('company', '').lower() == company_name.lower()]
+    company_apps = [
+        app for app in all_applications
+        if app.get('company', '').lower() == company_name.lower()
+    ]
 
     if not company_apps:
         return jsonify({'error': 'No data available'})
@@ -498,7 +655,8 @@ def api_company_insights(company_name):
     for app in company_apps:
         if app.get('application_date'):
             try:
-                app_date = datetime.strptime(app['application_date'], '%Y-%m-%d').date()
+                app_date = datetime.strptime(app['application_date'],
+                                             '%Y-%m-%d').date()
                 month_key = app_date.strftime('%Y-%m')
                 monthly_apps[month_key] += 1
             except:
@@ -512,27 +670,52 @@ def api_company_insights(company_name):
 
     # Enhanced WAM analysis by application stage
     wam_by_stage = {
-        'Applied': {'samples': [], 'avg': 0, 'min': 0, 'max': 0},
-        'Online Assessment Received': {'samples': [], 'avg': 0, 'min': 0, 'max': 0},
-        'Phone Interview Scheduled': {'samples': [], 'avg': 0, 'min': 0, 'max': 0},
-        'Assessment Centre Invited': {'samples': [], 'avg': 0, 'min': 0, 'max': 0},
-        'Offered': {'samples': [], 'avg': 0, 'min': 0, 'max': 0}
+        'Applied': {
+            'samples': [],
+            'avg': 0,
+            'min': 0,
+            'max': 0
+        },
+        'Online Assessment Received': {
+            'samples': [],
+            'avg': 0,
+            'min': 0,
+            'max': 0
+        },
+        'Phone Interview Scheduled': {
+            'samples': [],
+            'avg': 0,
+            'min': 0,
+            'max': 0
+        },
+        'Assessment Centre Invited': {
+            'samples': [],
+            'avg': 0,
+            'min': 0,
+            'max': 0
+        },
+        'Offered': {
+            'samples': [],
+            'avg': 0,
+            'min': 0,
+            'max': 0
+        }
     }
-    
+
     # WAM distribution ranges
     wam_ranges = {'70-74': 0, '75-79': 0, '80-84': 0, '85+': 0, 'Unknown': 0}
-    
+
     for app in company_apps:
         wam = app.get('wam', '')
         status = app.get('status', 'Applied')
-        
+
         if wam and str(wam).replace('.', '').isdigit():
             wam_val = float(wam)
-            
+
             # Add to stage-specific WAM tracking
             if status in wam_by_stage:
                 wam_by_stage[status]['samples'].append(wam_val)
-            
+
             # Add to range distribution
             if wam_val >= 85:
                 wam_ranges['85+'] += 1
@@ -544,7 +727,7 @@ def api_company_insights(company_name):
                 wam_ranges['70-74'] += 1
         else:
             wam_ranges['Unknown'] += 1
-    
+
     # Calculate WAM statistics for each stage
     wam_requirements = {}
     for stage, data in wam_by_stage.items():
@@ -562,7 +745,7 @@ def api_company_insights(company_name):
         else:
             wam_requirements[stage] = {
                 'average_wam': 'N/A',
-                'minimum_wam': 'N/A', 
+                'minimum_wam': 'N/A',
                 'maximum_wam': 'N/A',
                 'sample_size': 0
             }
@@ -581,8 +764,10 @@ def api_company_insights(company_name):
     for app in company_apps:
         if app.get('application_date') and app.get('response_date'):
             try:
-                app_date = datetime.strptime(app['application_date'], '%Y-%m-%d').date()
-                resp_date = datetime.strptime(app['response_date'], '%Y-%m-%d').date()
+                app_date = datetime.strptime(app['application_date'],
+                                             '%Y-%m-%d').date()
+                resp_date = datetime.strptime(app['response_date'],
+                                              '%Y-%m-%d').date()
                 response_times.append((resp_date - app_date).days)
             except:
                 pass
@@ -591,32 +776,45 @@ def api_company_insights(company_name):
         avg_response = sum(response_times) / len(response_times)
         if avg_response < 7:
             insights.append({
-                'type': 'positive',
-                'title': 'Fast Response Time',
-                'description': f'Average response time of {round(avg_response)} days indicates efficient recruitment'
+                'type':
+                'positive',
+                'title':
+                'Fast Response Time',
+                'description':
+                f'Average response time of {round(avg_response)} days indicates efficient recruitment'
             })
         elif avg_response > 30:
             insights.append({
-                'type': 'warning',
-                'title': 'Slow Response Time',
-                'description': f'Average response time of {round(avg_response)} days - consider following up'
+                'type':
+                'warning',
+                'title':
+                'Slow Response Time',
+                'description':
+                f'Average response time of {round(avg_response)} days - consider following up'
             })
 
     # Success rate insight
-    offers = len([app for app in company_apps if app.get('status') == 'Offered'])
+    offers = len(
+        [app for app in company_apps if app.get('status') == 'Offered'])
     offer_rate = round((offers / len(company_apps) * 100), 1)
 
     if offer_rate > 20:
         insights.append({
-            'type': 'positive',
-            'title': 'High Success Rate',
-            'description': f'{offer_rate}% offer rate suggests good candidate-company fit'
+            'type':
+            'positive',
+            'title':
+            'High Success Rate',
+            'description':
+            f'{offer_rate}% offer rate suggests good candidate-company fit'
         })
     elif offer_rate < 5:
         insights.append({
-            'type': 'info',
-            'title': 'Competitive Process',
-            'description': f'{offer_rate}% offer rate indicates highly selective recruitment'
+            'type':
+            'info',
+            'title':
+            'Competitive Process',
+            'description':
+            f'{offer_rate}% offer rate indicates highly selective recruitment'
         })
 
     # Enhanced university success analysis
@@ -633,40 +831,62 @@ def api_company_insights(company_name):
                     'avg_wam': [],
                     'successful_wam_range': []
                 }
-            
+
             university_success_rates[uni]['total_apps'] += 1
-            
+
             # Track WAM data
             if app.get('wam') and str(app['wam']).replace('.', '').isdigit():
-                university_success_rates[uni]['avg_wam'].append(float(app['wam']))
-            
+                university_success_rates[uni]['avg_wam'].append(
+                    float(app['wam']))
+
             status = app.get('status', 'Applied')
-            if status in ['Online Assessment Received', 'Phone Interview Scheduled', 'Assessment Centre Invited', 'Offered']:
+            if status in [
+                    'Online Assessment Received', 'Phone Interview Scheduled',
+                    'Assessment Centre Invited', 'Offered'
+            ]:
                 university_success_rates[uni]['assessment_received'] += 1
-                
-            if status in ['Phone Interview Scheduled', 'Assessment Centre Invited', 'Offered']:
+
+            if status in [
+                    'Phone Interview Scheduled', 'Assessment Centre Invited',
+                    'Offered'
+            ]:
                 university_success_rates[uni]['interview_reached'] += 1
-                
+
             if status == 'Offered':
                 university_success_rates[uni]['offers_received'] += 1
-                if app.get('wam') and str(app['wam']).replace('.', '').isdigit():
-                    university_success_rates[uni]['successful_wam_range'].append(float(app['wam']))
-    
+                if app.get('wam') and str(app['wam']).replace('.',
+                                                              '').isdigit():
+                    university_success_rates[uni][
+                        'successful_wam_range'].append(float(app['wam']))
+
     # Calculate percentages and averages for universities
     uni_analytics = {}
     for uni, data in university_success_rates.items():
         if data['total_apps'] >= 2:  # Minimum threshold for meaningful data
-            avg_wam = round(sum(data['avg_wam']) / len(data['avg_wam']), 1) if data['avg_wam'] else 'N/A'
-            successful_wam_avg = round(sum(data['successful_wam_range']) / len(data['successful_wam_range']), 1) if data['successful_wam_range'] else 'N/A'
-            
+            avg_wam = round(sum(data['avg_wam']) / len(data['avg_wam']),
+                            1) if data['avg_wam'] else 'N/A'
+            successful_wam_avg = round(
+                sum(data['successful_wam_range']) /
+                len(data['successful_wam_range']),
+                1) if data['successful_wam_range'] else 'N/A'
+
             uni_analytics[uni] = {
-                'total_applications': data['total_apps'],
-                'assessment_rate': round((data['assessment_received'] / data['total_apps']) * 100, 1),
-                'interview_rate': round((data['interview_reached'] / data['total_apps']) * 100, 1),
-                'offer_rate': round((data['offers_received'] / data['total_apps']) * 100, 1),
-                'average_applicant_wam': avg_wam,
-                'average_successful_wam': successful_wam_avg,
-                'sample_size': data['total_apps']
+                'total_applications':
+                data['total_apps'],
+                'assessment_rate':
+                round((data['assessment_received'] / data['total_apps']) * 100,
+                      1),
+                'interview_rate':
+                round((data['interview_reached'] / data['total_apps']) * 100,
+                      1),
+                'offer_rate':
+                round((data['offers_received'] / data['total_apps']) * 100, 1),
+                'average_applicant_wam':
+                avg_wam,
+                'average_successful_wam':
+                successful_wam_avg,
+                'sample_size':
+                data['total_apps']
             }
 
     return jsonify({
@@ -679,9 +899,6 @@ def api_company_insights(company_name):
         'insights': insights,
         'total_tracked': len(company_apps)
     })
-
-
-
 
 
 @app.route('/experiences')
@@ -699,38 +916,53 @@ def experiences():
             content_parts.append(f"Application: {sub['application_stages']}")
         if sub.get('interview_experience'):
             content_parts.append(f"Interview: {sub['interview_experience']}")
-        
+
         # Don't include advice in content_parts to avoid duplication
         main_content = " • ".join(content_parts) if content_parts else ""
-        
+
         # Add advice separately if it exists, is different from other content, and is actually helpful
         advice_text = sub.get('advice', '').strip()
-        if advice_text and advice_text not in main_content and is_helpful_advice(advice_text):
+        if advice_text and advice_text not in main_content and is_helpful_advice(
+                advice_text):
             if main_content:
                 main_content += f" • Advice: {advice_text}"
             else:
                 main_content = f"Advice: {advice_text}"
 
         experience_items.append({
-            "content": main_content,
-            "firm_name": sub['company'],
-            "quality_score": 0.95,
-            "primary_cat": sub.get('theme', 'other').lower().replace(' ', '_'),
+            "content":
+            main_content,
+            "firm_name":
+            sub['company'],
+            "quality_score":
+            0.95,
+            "primary_cat":
+            sub.get('theme', 'other').lower().replace(' ', '_'),
             "cat_labels": [sub.get('theme', 'Other')],
-            "is_submission": True,
-            "experience_type": sub.get('experience_type', ''),
-            "role": sub.get('role', ''),
-            "timestamp": sub.get('timestamp', ''),
-            "user_name": sub.get('user_name', 'Anonymous'),
-            "source": sub.get('source', 'user'),
-            "pro_tip": sub.get('pro_tip', ''),
-            "advice": advice_text  # Keep for potential separate display but don't duplicate
+            "is_submission":
+            True,
+            "experience_type":
+            sub.get('experience_type', ''),
+            "role":
+            sub.get('role', ''),
+            "timestamp":
+            sub.get('timestamp', ''),
+            "user_name":
+            sub.get('user_name', 'Anonymous'),
+            "source":
+            sub.get('source', 'user'),
+            "pro_tip":
+            sub.get('pro_tip', ''),
+            "advice":
+            advice_text  # Keep for potential separate display but don't duplicate
         })
 
     # Sort by timestamp (most recent first)
     experience_items.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
 
-    return render_template("experiences.html", experiences=experience_items, is_filtered=True)
+    return render_template("experiences.html",
+                           experiences=experience_items,
+                           is_filtered=True)
 
 
 @app.route('/experiences/<firm_name>')
@@ -743,33 +975,40 @@ def firm_experiences(firm_name):
 
     # Create company slug and title for template
     company_slug = firm_name.lower().replace(' ', '-').replace('&', 'and')
-    company_title = firm_name.replace('-', ' ').replace('%20', ' ').strip().title()
+    company_title = firm_name.replace('-', ' ').replace('%20',
+                                                        ' ').strip().title()
 
     # Load submissions data for this firm
     with open(data_file, 'r') as f:
         submissions = json.load(f)
 
-    firm_submissions = [s for s in submissions if s.get('company', '').lower() == firm_name.lower()]
+    firm_submissions = [
+        s for s in submissions
+        if s.get('company', '').lower() == firm_name.lower()
+    ]
 
     # Convert submissions to experience format for display
     items = []
     seen_advice = set()  # Track seen advice to prevent duplicates
-    
+
     for sub in firm_submissions:
         # Build main content without duplicating advice
         content_parts = []
         if sub.get('application_stages'):
-            content_parts.append(f"Application process: {sub['application_stages']}")
+            content_parts.append(
+                f"Application process: {sub['application_stages']}")
         if sub.get('interview_experience'):
-            content_parts.append(f"Interview experience: {sub['interview_experience']}")
-        
+            content_parts.append(
+                f"Interview experience: {sub['interview_experience']}")
+
         # Don't include advice in content_parts to avoid duplication
         main_content = " • ".join(content_parts) if content_parts else ""
-        
+
         # Add advice separately if it exists, is different from other content, is actually helpful, and not already shown
         advice_text = sub.get('advice', '').strip()
-        if (advice_text and advice_text not in main_content and 
-            is_helpful_advice(advice_text) and advice_text not in seen_advice):
+        if (advice_text and advice_text not in main_content
+                and is_helpful_advice(advice_text)
+                and advice_text not in seen_advice):
             seen_advice.add(advice_text)
             if main_content:
                 main_content += f" • Advice: {advice_text}"
@@ -777,42 +1016,60 @@ def firm_experiences(firm_name):
                 main_content = f"Advice: {advice_text}"
 
         items.append({
-            "content": main_content,
-            "firm_name": sub['company'],
-            "quality_score": 0.95,
-            "primary_cat": sub.get('theme', 'other').lower().replace(' ', '_'),
+            "content":
+            main_content,
+            "firm_name":
+            sub['company'],
+            "quality_score":
+            0.95,
+            "primary_cat":
+            sub.get('theme', 'other').lower().replace(' ', '_'),
             "cat_labels": [sub.get('theme', 'Other')],
-            "is_submission": True,
-            "experience_type": sub.get('experience_type', ''),
-            "role": sub.get('role', ''),
-            "timestamp": sub.get('timestamp', ''),
-            "user_name": sub.get('user_name', 'Anonymous'),
-            "source": sub.get('source', 'user'),
-            "application_process": sub.get('application_stages', ''),
-            "application_stages": sub.get('application_stages', ''),
-            "interview_experience": sub.get('interview_experience', ''),
-            "pro_tip": sub.get('pro_tip', ''),
-            "advice": advice_text  # Keep for potential separate display but don't duplicate
+            "is_submission":
+            True,
+            "experience_type":
+            sub.get('experience_type', ''),
+            "role":
+            sub.get('role', ''),
+            "timestamp":
+            sub.get('timestamp', ''),
+            "user_name":
+            sub.get('user_name', 'Anonymous'),
+            "source":
+            sub.get('source', 'user'),
+            "application_process":
+            sub.get('application_stages', ''),
+            "application_stages":
+            sub.get('application_stages', ''),
+            "interview_experience":
+            sub.get('interview_experience', ''),
+            "pro_tip":
+            sub.get('pro_tip', ''),
+            "advice":
+            advice_text  # Keep for potential separate display but don't duplicate
         })
 
     # Apply category filter
     active_cat = request.args.get("cat")
     if active_cat:
-        items = [item for item in items if item.get("primary_cat") == active_cat]
+        items = [
+            item for item in items if item.get("primary_cat") == active_cat
+        ]
 
     # Build category counts
-    cat_counts = Counter(item["primary_cat"] for item in items if item.get("primary_cat"))
+    cat_counts = Counter(item["primary_cat"] for item in items
+                         if item.get("primary_cat"))
 
-    return render_template("experiences.html", 
-                         experiences=items, 
-                         firm_name=firm_name,
-                         company=firm_name,
-                         company_slug=company_slug,
-                         company_title=company_title,
-                         is_filtered=True,
-                         university_data=university_data,
-                         cat_counts=cat_counts,
-                         active_cat=active_cat)
+    return render_template("experiences.html",
+                           experiences=items,
+                           firm_name=firm_name,
+                           company=firm_name,
+                           company_slug=company_slug,
+                           company_title=company_title,
+                           is_filtered=True,
+                           university_data=university_data,
+                           cat_counts=cat_counts,
+                           active_cat=active_cat)
 
 
 @app.route('/law-match', methods=['GET', 'POST'])
@@ -833,24 +1090,32 @@ def law_match():
         experience = request.form.get('experience', 'none')
         location = request.form.get('location', 'any')
         grad_year = request.form.get('grad_year', '2025')
-        
+
         # Import datetime for timing analysis
         from datetime import datetime
         import csv
-        
+
         # Advanced candidate profiling for meta-analysis
         candidate_profile = {
-            'competitiveness': 'high' if wam >= 82 else 'medium' if wam >= 75 else 'developing',
-            'network_strength': 'strong' if any(FIRM_UNIVERSITY_DATA.get(f[0], {}).get(uni, 0) >= 20 for f in sorted_firms[:2]) else 'moderate',
-            'market_timing': 'optimal' if 2 <= datetime.now().month <= 5 else 'late' if datetime.now().month >= 8 else 'early',
-            'experience_level': experience,
-            'career_focus': preference
+            'competitiveness':
+            'high' if wam >= 82 else 'medium' if wam >= 75 else 'developing',
+            'network_strength':
+            'strong' if any(
+                FIRM_UNIVERSITY_DATA.get(f[0], {}).get(uni, 0) >= 20
+                for f in sorted_firms[:2]) else 'moderate',
+            'market_timing':
+            'optimal' if 2 <= datetime.now().month <= 5 else
+            'late' if datetime.now().month >= 8 else 'early',
+            'experience_level':
+            experience,
+            'career_focus':
+            preference
         }
 
         # Load real firm data from CSV
         firms = load_cards_v2("out/grad_program_signals.csv")
         firm_data_lookup = {firm['name']: firm for firm in firms}
-        
+
         # Load comprehensive data from processed CSV
         csv_insights = {}
         with open("out/grad_program_signals.csv", 'r', encoding='utf-8') as f:
@@ -860,95 +1125,165 @@ def law_match():
                 if firm_name:
                     if firm_name not in csv_insights:
                         csv_insights[firm_name] = {
-                            'total_mentions': 0, 'recent_activity': 0, 
-                            'avg_confidence': 0, 'cities': set(), 'program_types': set(),
-                            'confidence_scores': [], 'years': set()
+                            'total_mentions': 0,
+                            'recent_activity': 0,
+                            'avg_confidence': 0,
+                            'cities': set(),
+                            'program_types': set(),
+                            'confidence_scores': [],
+                            'years': set()
                         }
-                    
+
                     data = csv_insights[firm_name]
                     data['total_mentions'] += 1
-                    
+
                     # Track recent activity (2024-2025)
                     year = row.get('intake_year', '')
                     if year and year.isdigit() and int(year) >= 2024:
                         data['recent_activity'] += 1
                         data['years'].add(int(year))
-                    
+
                     # Track confidence and locations
                     confidence = row.get('confidence', '')
                     if confidence:
                         try:
                             data['confidence_scores'].append(float(confidence))
-                        except: pass
-                    
+                        except:
+                            pass
+
                     city = row.get('city', '').strip()
                     if city and city != 'Other/Unknown':
                         data['cities'].add(city)
-                    
+
                     program_type = row.get('program_type', '').strip()
                     if program_type and program_type != 'ambiguous':
                         data['program_types'].add(program_type)
-        
+
         # Calculate averages for CSV insights
         for firm_name, data in csv_insights.items():
             if data['confidence_scores']:
-                data['avg_confidence'] = sum(data['confidence_scores']) / len(data['confidence_scores'])
+                data['avg_confidence'] = sum(data['confidence_scores']) / len(
+                    data['confidence_scores'])
             data['cities'] = list(data['cities'])
             data['program_types'] = list(data['program_types'])
-        
+
         # Enhanced firm profiling with real data integration and CSV insights
         base_profiles = {
             'Allens': {
-                'tier': 'top', 'prestige_score': 95, 'training_score': 90, 'worklife_score': 65,
-                'competitive_level': 'very_high', 'wam_threshold': 82,
-                'strengths': ['Corporate M&A', 'Banking & Finance', 'Competition Law'],
-                'culture': 'Traditional, high-performing, competitive'
+                'tier':
+                'top',
+                'prestige_score':
+                95,
+                'training_score':
+                90,
+                'worklife_score':
+                65,
+                'competitive_level':
+                'very_high',
+                'wam_threshold':
+                82,
+                'strengths':
+                ['Corporate M&A', 'Banking & Finance', 'Competition Law'],
+                'culture':
+                'Traditional, high-performing, competitive'
             },
             'King & Wood Mallesons': {
-                'tier': 'top', 'prestige_score': 95, 'training_score': 85, 'worklife_score': 60,
-                'competitive_level': 'very_high', 'wam_threshold': 83,
-                'strengths': ['Asia-Pacific focus', 'Corporate M&A', 'Capital Markets'],
-                'culture': 'International, demanding, prestigious'
+                'tier':
+                'top',
+                'prestige_score':
+                95,
+                'training_score':
+                85,
+                'worklife_score':
+                60,
+                'competitive_level':
+                'very_high',
+                'wam_threshold':
+                83,
+                'strengths':
+                ['Asia-Pacific focus', 'Corporate M&A', 'Capital Markets'],
+                'culture':
+                'International, demanding, prestigious'
             },
             'Herbert Smith Freehills': {
-                'tier': 'top', 'prestige_score': 90, 'training_score': 88, 'worklife_score': 68,
-                'competitive_level': 'very_high', 'wam_threshold': 81,
-                'strengths': ['Dispute Resolution', 'Energy & Resources', 'Corporate'],
-                'culture': 'Global outlook, collaborative, high standards'
+                'tier':
+                'top',
+                'prestige_score':
+                90,
+                'training_score':
+                88,
+                'worklife_score':
+                68,
+                'competitive_level':
+                'very_high',
+                'wam_threshold':
+                81,
+                'strengths':
+                ['Dispute Resolution', 'Energy & Resources', 'Corporate'],
+                'culture':
+                'Global outlook, collaborative, high standards'
             },
             'Gilbert + Tobin': {
-                'tier': 'top', 'prestige_score': 88, 'training_score': 92, 'worklife_score': 75,
-                'competitive_level': 'high', 'wam_threshold': 78,
-                'strengths': ['Litigation', 'Corporate Advisory', 'Employment'],
+                'tier': 'top',
+                'prestige_score': 88,
+                'training_score': 92,
+                'worklife_score': 75,
+                'competitive_level': 'high',
+                'wam_threshold': 78,
+                'strengths':
+                ['Litigation', 'Corporate Advisory', 'Employment'],
                 'culture': 'Innovative, collegial, quality-focused'
             },
             'Clayton Utz': {
-                'tier': 'mid-top', 'prestige_score': 85, 'training_score': 85, 'worklife_score': 70,
-                'competitive_level': 'high', 'wam_threshold': 76,
-                'strengths': ['Insurance', 'Construction', 'Government Advisory'],
+                'tier': 'mid-top',
+                'prestige_score': 85,
+                'training_score': 85,
+                'worklife_score': 70,
+                'competitive_level': 'high',
+                'wam_threshold': 76,
+                'strengths':
+                ['Insurance', 'Construction', 'Government Advisory'],
                 'culture': 'Client-focused, collaborative, supportive'
             },
             'Ashurst': {
-                'tier': 'mid-top', 'prestige_score': 82, 'training_score': 80, 'worklife_score': 72,
-                'competitive_level': 'high', 'wam_threshold': 75,
-                'strengths': ['Infrastructure', 'Corporate', 'Financial Services'],
+                'tier': 'mid-top',
+                'prestige_score': 82,
+                'training_score': 80,
+                'worklife_score': 72,
+                'competitive_level': 'high',
+                'wam_threshold': 75,
+                'strengths':
+                ['Infrastructure', 'Corporate', 'Financial Services'],
                 'culture': 'International, team-oriented, developmental'
             },
             'MinterEllison': {
-                'tier': 'mid', 'prestige_score': 78, 'training_score': 85, 'worklife_score': 75,
-                'competitive_level': 'moderate', 'wam_threshold': 73,
+                'tier': 'mid',
+                'prestige_score': 78,
+                'training_score': 85,
+                'worklife_score': 75,
+                'competitive_level': 'moderate',
+                'wam_threshold': 73,
                 'strengths': ['Government', 'Health', 'Workplace Relations'],
                 'culture': 'Diverse, inclusive, development-focused'
             },
             'Corrs Chambers Westgarth': {
-                'tier': 'mid', 'prestige_score': 75, 'training_score': 82, 'worklife_score': 78,
-                'competitive_level': 'moderate', 'wam_threshold': 72,
-                'strengths': ['Corporate', 'Competition', 'Intellectual Property'],
+                'tier': 'mid',
+                'prestige_score': 75,
+                'training_score': 82,
+                'worklife_score': 78,
+                'competitive_level': 'moderate',
+                'wam_threshold': 72,
+                'strengths':
+                ['Corporate', 'Competition', 'Intellectual Property'],
                 'culture': 'Collegiate, supportive, quality work'
             },
             'Lander & Rogers': {
-                'tier': 'mid', 'prestige_score': 70, 'training_score': 88, 'worklife_score': 85,
-                'competitive_level': 'moderate', 'wam_threshold': 70,
+                'tier': 'mid',
+                'prestige_score': 70,
+                'training_score': 88,
+                'worklife_score': 85,
+                'competitive_level': 'moderate',
+                'wam_threshold': 70,
                 'strengths': ['Family Law', 'Commercial', 'Property'],
                 'culture': 'Melbourne-focused, mentoring, work-life balance'
             }
@@ -958,23 +1293,34 @@ def law_match():
         firm_profiles = {}
         for firm_name, base_profile in base_profiles.items():
             profile = base_profile.copy()
-            
+
             # Add real salary data if available
             real_data = firm_data_lookup.get(firm_name)
             if real_data and real_data.get('avg_salary'):
                 profile['avg_salary'] = real_data['avg_salary']
-                profile['salary_range'] = real_data.get('salary_range', f"${real_data['avg_salary']:,.0f}")
+                profile['salary_range'] = real_data.get(
+                    'salary_range', f"${real_data['avg_salary']:,.0f}")
             else:
                 # Fallback salary estimates based on tier
                 salary_estimates = {
-                    'top': {'avg': 87000, 'range': '82-95k'},
-                    'mid-top': {'avg': 82000, 'range': '76-88k'},
-                    'mid': {'avg': 75000, 'range': '70-82k'}
+                    'top': {
+                        'avg': 87000,
+                        'range': '82-95k'
+                    },
+                    'mid-top': {
+                        'avg': 82000,
+                        'range': '76-88k'
+                    },
+                    'mid': {
+                        'avg': 75000,
+                        'range': '70-82k'
+                    }
                 }
-                est = salary_estimates.get(profile['tier'], salary_estimates['mid'])
+                est = salary_estimates.get(profile['tier'],
+                                           salary_estimates['mid'])
                 profile['avg_salary'] = est['avg']
                 profile['salary_range'] = est['range']
-            
+
             # Integrate CSV-derived insights
             csv_data = csv_insights.get(firm_name, {})
             profile['csv_activity'] = csv_data.get('recent_activity', 0)
@@ -982,21 +1328,25 @@ def law_match():
             profile['csv_mentions'] = csv_data.get('total_mentions', 0)
             profile['active_cities'] = csv_data.get('cities', [])
             profile['program_offerings'] = csv_data.get('program_types', [])
-            
+
             # Calculate market activity score (0-1)
-            max_activity = max([data.get('recent_activity', 0) for data in csv_insights.values()] + [1])
-            profile['market_activity'] = csv_data.get('recent_activity', 0) / max_activity if max_activity > 0 else 0
-            
+            max_activity = max([
+                data.get('recent_activity', 0)
+                for data in csv_insights.values()
+            ] + [1])
+            profile['market_activity'] = csv_data.get(
+                'recent_activity', 0) / max_activity if max_activity > 0 else 0
+
             firm_profiles[firm_name] = profile
 
         # Enhanced data-driven scoring algorithm
         firm_scores = {}
-        
+
         for firm, profile in firm_profiles.items():
             score = 40.0  # Lower base score to emphasize data-driven factors
             reasons = []
             confidence_factors = []
-            
+
             # Market activity bonus (based on real CSV data)
             activity_score = profile.get('market_activity', 0) * 15
             if activity_score >= 10:
@@ -1007,7 +1357,7 @@ def law_match():
                 score += activity_score
                 reasons.append(f"Active graduate recruitment")
                 confidence_factors.append('moderate_recruiting')
-            
+
             # Data confidence bonus (how reliable our insights are)
             csv_confidence = profile.get('csv_confidence', 0.5)
             csv_mentions = profile.get('csv_mentions', 0)
@@ -1017,49 +1367,61 @@ def law_match():
             elif csv_confidence >= 0.7 and csv_mentions >= 5:
                 score += 5
                 confidence_factors.append('good_data_quality')
-            
+
             # University representation (weighted by firm tier and data quality)
-            uni_percentage = FIRM_UNIVERSITY_DATA.get(firm, {}).get(uni, FIRM_UNIVERSITY_DATA.get(firm, {}).get('Other', 0))
-            data_weight = 1.0 + (profile.get('csv_confidence', 0.5) - 0.5)  # Boost for high-quality data
-            tier_weight = 1.5 if profile['tier'] == 'top' else 1.2 if profile['tier'] == 'mid-top' else 1.0
+            uni_percentage = FIRM_UNIVERSITY_DATA.get(firm, {}).get(
+                uni,
+                FIRM_UNIVERSITY_DATA.get(firm, {}).get('Other', 0))
+            data_weight = 1.0 + (profile.get('csv_confidence', 0.5) - 0.5
+                                 )  # Boost for high-quality data
+            tier_weight = 1.5 if profile['tier'] == 'top' else 1.2 if profile[
+                'tier'] == 'mid-top' else 1.0
             uni_weight = tier_weight * data_weight
-            
+
             if uni_percentage >= 25:
                 uni_bonus = 30 * uni_weight
                 score += uni_bonus
-                reasons.append(f"Excellent {uni} representation ({uni_percentage}%)")
+                reasons.append(
+                    f"Excellent {uni} representation ({uni_percentage}%)")
                 confidence_factors.append('excellent_uni_rep')
             elif uni_percentage >= 15:
                 uni_bonus = 22 * uni_weight
                 score += uni_bonus
-                reasons.append(f"Strong {uni} representation ({uni_percentage}%)")
+                reasons.append(
+                    f"Strong {uni} representation ({uni_percentage}%)")
                 confidence_factors.append('high_uni_rep')
             elif uni_percentage >= 8:
                 uni_bonus = 12 * uni_weight
                 score += uni_bonus
-                reasons.append(f"Good {uni} representation ({uni_percentage}%)")
+                reasons.append(
+                    f"Good {uni} representation ({uni_percentage}%)")
                 confidence_factors.append('medium_uni_rep')
             elif uni_percentage >= 3:
                 uni_bonus = 6 * uni_weight
                 score += uni_bonus
-                reasons.append(f"Some {uni} representation ({uni_percentage}%)")
+                reasons.append(
+                    f"Some {uni} representation ({uni_percentage}%)")
 
             # Enhanced WAM scoring with data-driven thresholds
             wam_threshold = profile.get('wam_threshold', 75)
-            
+
             # Adjust threshold based on market competition and data
             competition_adjustment = 0
-            if profile.get('market_activity', 0) > 0.7:  # High activity = more competitive
+            if profile.get('market_activity',
+                           0) > 0.7:  # High activity = more competitive
                 competition_adjustment = 2
-            elif profile.get('market_activity', 0) < 0.3:  # Low activity = less competitive
+            elif profile.get('market_activity',
+                             0) < 0.3:  # Low activity = less competitive
                 competition_adjustment = -2
-            
+
             adjusted_threshold = wam_threshold + competition_adjustment
             wam_diff = wam - adjusted_threshold
-            
+
             if wam_diff >= 12:
                 score += 40
-                reasons.append(f"WAM significantly exceeds expectations ({wam:.1f} vs ~{adjusted_threshold})")
+                reasons.append(
+                    f"WAM significantly exceeds expectations ({wam:.1f} vs ~{adjusted_threshold})"
+                )
                 confidence_factors.append('outstanding_wam')
             elif wam_diff >= 7:
                 score += 30
@@ -1071,7 +1433,8 @@ def law_match():
                 confidence_factors.append('strong_wam')
             elif wam_diff >= 0:
                 score += 12
-                reasons.append(f"WAM meets current market expectations ({wam:.1f})")
+                reasons.append(
+                    f"WAM meets current market expectations ({wam:.1f})")
                 confidence_factors.append('adequate_wam')
             elif wam_diff >= -3:
                 score += 3
@@ -1088,52 +1451,71 @@ def law_match():
             if preference == 'prestige':
                 pref_score = profile['prestige_score'] * pref_weight
                 score += pref_score
-                reasons.append(f"High prestige rating ({profile['prestige_score']}/100)")
+                reasons.append(
+                    f"High prestige rating ({profile['prestige_score']}/100)")
             elif preference == 'training':
                 pref_score = profile['training_score'] * pref_weight
                 score += pref_score
-                reasons.append(f"Strong training programs ({profile['training_score']}/100)")
+                reasons.append(
+                    f"Strong training programs ({profile['training_score']}/100)"
+                )
             elif preference == 'worklife':
                 pref_score = profile['worklife_score'] * pref_weight
                 score += pref_score
-                reasons.append(f"Good work-life balance ({profile['worklife_score']}/100)")
+                reasons.append(
+                    f"Good work-life balance ({profile['worklife_score']}/100)"
+                )
             elif preference == 'salary':
                 salary_score = min(25, (profile['avg_salary'] - 70000) / 1000)
                 score += salary_score
-                reasons.append(f"Competitive salary (${profile['avg_salary']:,.0f})")
+                reasons.append(
+                    f"Competitive salary (${profile['avg_salary']:,.0f})")
 
             # Experience level fit (only add specific bonuses, no generic reasons)
             exp_bonus = 0
-            if experience == 'extensive' and profile['competitive_level'] == 'very_high':
+            if experience == 'extensive' and profile[
+                    'competitive_level'] == 'very_high':
                 exp_bonus = 15
-            elif experience == 'some' and profile['competitive_level'] in ['high', 'moderate']:
+            elif experience == 'some' and profile['competitive_level'] in [
+                    'high', 'moderate'
+            ]:
                 exp_bonus = 12
-            elif experience == 'none' and profile['competitive_level'] == 'moderate':
+            elif experience == 'none' and profile[
+                    'competitive_level'] == 'moderate':
                 exp_bonus = 15
-                reasons.append("Welcomes graduates without prior legal experience")
-            elif experience == 'none' and profile['competitive_level'] == 'high':
+                reasons.append(
+                    "Welcomes graduates without prior legal experience")
+            elif experience == 'none' and profile[
+                    'competitive_level'] == 'high':
                 exp_bonus = 5
-            
+
             score += exp_bonus
 
             # Advanced interest area alignment with market intelligence
             interest_bonus = 0
             interest_keywords = {
-                'commercial': ['corporate', 'm&a', 'banking', 'finance', 'commercial', 'capital markets'],
-                'litigation': ['litigation', 'dispute', 'resolution', 'employment', 'arbitration'],
+                'commercial': [
+                    'corporate', 'm&a', 'banking', 'finance', 'commercial',
+                    'capital markets'
+                ],
+                'litigation': [
+                    'litigation', 'dispute', 'resolution', 'employment',
+                    'arbitration'
+                ],
                 'family': ['family'],
                 'criminal': ['criminal'],
                 'employment': ['employment', 'workplace', 'industrial'],
                 'property': ['property', 'real estate', 'construction'],
                 'tax': ['tax', 'revenue'],
-                'technology': ['technology', 'ip', 'intellectual property', 'data'],
+                'technology':
+                ['technology', 'ip', 'intellectual property', 'data'],
                 'energy': ['energy', 'resources', 'mining', 'oil'],
                 'other': []
             }
-            
+
             user_keywords = interest_keywords.get(interest, [])
             matched_strengths = []
-            
+
             for strength in profile['strengths']:
                 for keyword in user_keywords:
                     if keyword.lower() in strength.lower():
@@ -1141,26 +1523,31 @@ def law_match():
                         interest_bonus += 20
                         confidence_factors.append('practice_match')
                         break
-            
+
             # Provide specific practice area insights
             if matched_strengths:
                 if len(matched_strengths) > 1:
-                    reasons.append(f"Multiple practice strengths: {', '.join(matched_strengths[:2])}")
+                    reasons.append(
+                        f"Multiple practice strengths: {', '.join(matched_strengths[:2])}"
+                    )
                 else:
-                    reasons.append(f"Leading expertise in {matched_strengths[0]}")
-            
+                    reasons.append(
+                        f"Leading expertise in {matched_strengths[0]}")
+
             # Emerging practice area bonus for forward-thinking candidates
-            if interest == 'technology' and any('tech' in s.lower() or 'ip' in s.lower() for s in profile['strengths']):
+            if interest == 'technology' and any(
+                    'tech' in s.lower() or 'ip' in s.lower()
+                    for s in profile['strengths']):
                 interest_bonus += 10
                 reasons.append("Strong in high-growth technology practice")
-            
+
             score += interest_bonus
 
             # Enhanced location matching with CSV data
             if location != 'any':
                 active_cities = profile.get('active_cities', [])
                 real_data = firm_data_lookup.get(firm)
-                
+
                 location_match = False
                 if active_cities:
                     for city in active_cities:
@@ -1170,34 +1557,39 @@ def law_match():
                             confidence_factors.append('location_match')
                             location_match = True
                             break
-                
-                if not location_match and real_data and real_data.get('top_city'):
+
+                if not location_match and real_data and real_data.get(
+                        'top_city'):
                     if location.lower() in real_data['top_city'].lower():
                         score += 6
                         reasons.append(f"Established presence in {location}")
-            
+
             # Advanced program type and career path alignment
             program_types = profile.get('program_offerings', [])
             if interest in ['clerkship', 'graduate']:
                 target_program = 'clerkship' if interest == 'clerkship' else 'graduate'
-                
-                if any(target_program in prog.lower() for prog in program_types):
+
+                if any(target_program in prog.lower()
+                       for prog in program_types):
                     score += 10
                     confidence_factors.append('program_match')
                 elif program_types:  # Has programs but not exact match
                     score += 5
-            
+
             # Intelligent career progression analysis
             if experience == 'extensive' and preference == 'prestige':
-                if profile['tier'] == 'top' and profile.get('market_activity', 0) > 0.5:
+                if profile['tier'] == 'top' and profile.get(
+                        'market_activity', 0) > 0.5:
                     score += 12
-                    reasons.append("Perfect timing for experienced candidate seeking prestige")
+                    reasons.append(
+                        "Perfect timing for experienced candidate seeking prestige"
+                    )
             elif experience == 'none' and preference == 'training':
                 if profile['training_score'] >= 85:
                     score += 15
                     reasons.append("Excellent graduate development programs")
                     confidence_factors.append('training_excellence')
-            
+
             # Market timing intelligence
             current_month = datetime.now().month
             if grad_year == '2025':
@@ -1208,31 +1600,40 @@ def law_match():
                 elif current_month >= 8:  # Late season opportunities
                     if profile.get('market_activity', 0) > 0.4:
                         score += 6
-                        reasons.append("Still actively recruiting late in season")
-            
+                        reasons.append(
+                            "Still actively recruiting late in season")
+
             # Sophisticated WAM contextualization
-            if uni in ['University of Melbourne', 'University of Sydney', 'UNSW']:
+            if uni in [
+                    'University of Melbourne', 'University of Sydney', 'UNSW'
+            ]:
                 go8_bonus = 3  # Go8 recognition
                 if wam >= 80:
                     go8_bonus = 8
-                    reasons.append("Strong WAM from prestigious Go8 university")
+                    reasons.append(
+                        "Strong WAM from prestigious Go8 university")
                 score += go8_bonus
-            
+
             # Strategic preference matching with market intelligence
             if preference == 'salary':
                 salary_competitive = profile.get('avg_salary', 75000)
                 if salary_competitive >= 85000:
                     score += 18
-                    reasons.append(f"Top-tier compensation (${salary_competitive:,.0f})")
+                    reasons.append(
+                        f"Top-tier compensation (${salary_competitive:,.0f})")
                 elif salary_competitive >= 80000:
                     score += 12
-                    reasons.append(f"Competitive salary package (${salary_competitive:,.0f})")
+                    reasons.append(
+                        f"Competitive salary package (${salary_competitive:,.0f})"
+                    )
             elif preference == 'prestige' and profile['tier'] == 'top':
-                market_reputation = profile.get('market_activity', 0) * 0.3 + profile.get('csv_confidence', 0.5) * 0.4
+                market_reputation = profile.get(
+                    'market_activity', 0) * 0.3 + profile.get(
+                        'csv_confidence', 0.5) * 0.4
                 if market_reputation > 0.6:
                     score += 15
                     reasons.append("Market-leading reputation and visibility")
-            
+
             # Intelligent experience-firm culture matching
             culture_match = 0
             culture = profile.get('culture', '').lower()
@@ -1248,25 +1649,38 @@ def law_match():
             elif experience == 'some':
                 if 'collaborative' in culture or 'team' in culture:
                     culture_match = 10
-                    reasons.append("Collaborative environment values diverse experience")
-            
+                    reasons.append(
+                        "Collaborative environment values diverse experience")
+
             score += culture_match
 
             # Enhanced confidence calculation with data quality factors
             confidence = 'Low'
-            high_confidence_factors = ['outstanding_wam', 'excellent_wam', 'excellent_uni_rep', 'active_recruiting', 'high_data_quality']
-            medium_confidence_factors = ['strong_wam', 'high_uni_rep', 'practice_match', 'location_match', 'good_data_quality']
-            
-            if (len(confidence_factors) >= 4 or 
-                any(f in confidence_factors for f in high_confidence_factors) and len(confidence_factors) >= 2 or
-                'outstanding_wam' in confidence_factors):
+            high_confidence_factors = [
+                'outstanding_wam', 'excellent_wam', 'excellent_uni_rep',
+                'active_recruiting', 'high_data_quality'
+            ]
+            medium_confidence_factors = [
+                'strong_wam', 'high_uni_rep', 'practice_match',
+                'location_match', 'good_data_quality'
+            ]
+
+            if (len(confidence_factors) >= 4
+                    or any(f in confidence_factors
+                           for f in high_confidence_factors)
+                    and len(confidence_factors) >= 2
+                    or 'outstanding_wam' in confidence_factors):
                 confidence = 'Very High'
-            elif (len(confidence_factors) >= 3 or 
-                  any(f in confidence_factors for f in high_confidence_factors) or
-                  len([f for f in confidence_factors if f in medium_confidence_factors]) >= 2):
+            elif (len(confidence_factors) >= 3
+                  or any(f in confidence_factors
+                         for f in high_confidence_factors) or len([
+                             f for f in confidence_factors
+                             if f in medium_confidence_factors
+                         ]) >= 2):
                 confidence = 'High'
-            elif (len(confidence_factors) >= 2 or 
-                  any(f in confidence_factors for f in medium_confidence_factors)):
+            elif (len(confidence_factors) >= 2
+                  or any(f in confidence_factors
+                         for f in medium_confidence_factors)):
                 confidence = 'Medium'
 
             firm_scores[firm] = {
@@ -1278,15 +1692,17 @@ def law_match():
             }
 
         # Intelligent ranking with diversification logic
-        sorted_firms = sorted(firm_scores.items(), key=lambda x: x[1]['score'], reverse=True)
-        
+        sorted_firms = sorted(firm_scores.items(),
+                              key=lambda x: x[1]['score'],
+                              reverse=True)
+
         # Smart selection algorithm that ensures diversity
         top_firms = []
         selected_tiers = set()
-        
+
         for firm, data in sorted_firms:
             tier = data['profile']['tier']
-            
+
             # Always include top scorer
             if len(top_firms) == 0:
                 top_firms.append((firm, data))
@@ -1294,20 +1710,21 @@ def law_match():
             # For subsequent firms, prefer diversity unless score gap is huge
             elif len(top_firms) < 5:
                 score_gap = top_firms[0][1]['score'] - data['score']
-                
+
                 # If score is still very competitive, add it
                 if score_gap <= 20:
                     top_firms.append((firm, data))
                     selected_tiers.add(tier)
                 # If we need tier diversity and score is reasonable, include it
-                elif tier not in selected_tiers and score_gap <= 35 and data['score'] >= 50:
+                elif tier not in selected_tiers and score_gap <= 35 and data[
+                        'score'] >= 50:
                     top_firms.append((firm, data))
                     selected_tiers.add(tier)
                 # Otherwise, only include if score is very close
                 elif score_gap <= 10:
                     top_firms.append((firm, data))
                     selected_tiers.add(tier)
-        
+
         # Ensure we have at least 3 recommendations
         while len(top_firms) < min(3, len(sorted_firms)):
             for firm, data in sorted_firms:
@@ -1331,64 +1748,93 @@ def law_match():
                 rec_type = 'High Confidence'
             else:
                 rec_type = 'Consider'
-            
+
             # Intelligent reason filtering and enhancement
             meaningful_reasons = []
             strategic_advice = []
-            
+
             for reason in firm_data['reasons']:
                 # Skip generic reasons but enhance specific ones
                 if not any(generic in reason.lower() for generic in [
-                    'be genuine', 'prepare thoroughly', 'show enthusiasm',
-                    'good experience level', 'matches firm expectations'
+                        'be genuine', 'prepare thoroughly', 'show enthusiasm',
+                        'good experience level', 'matches firm expectations'
                 ]):
                     meaningful_reasons.append(reason)
-            
+
             # Add strategic application advice based on firm profile
             tier = firm_data['profile']['tier']
             market_activity = firm_data['profile'].get('market_activity', 0)
-            
+
             if tier == 'top' and market_activity > 0.7:
-                strategic_advice.append("Apply early - highly competitive positions")
+                strategic_advice.append(
+                    "Apply early - highly competitive positions")
             elif firm_data['profile']['training_score'] >= 85:
-                strategic_advice.append("Emphasize learning motivation in application")
+                strategic_advice.append(
+                    "Emphasize learning motivation in application")
             elif 'culture_fit' in firm_data.get('confidence_factors', []):
-                strategic_advice.append("Research firm culture for interview preparation")
-            
+                strategic_advice.append(
+                    "Research firm culture for interview preparation")
+
             recommendations.append({
-                'firm': firm_name,
-                'confidence': firm_data['confidence'],
-                'recommendation_type': rec_type,
-                'score': round(firm_data['score'], 1),
-                'reasons': meaningful_reasons[:3],
-                'strategic_advice': strategic_advice[:2],
-                'profile': firm_data['profile'],
-                'tier': tier,
-                'salary_range': firm_data['profile'].get('salary_range', 'Contact for details')
+                'firm':
+                firm_name,
+                'confidence':
+                firm_data['confidence'],
+                'recommendation_type':
+                rec_type,
+                'score':
+                round(firm_data['score'], 1),
+                'reasons':
+                meaningful_reasons[:3],
+                'strategic_advice':
+                strategic_advice[:2],
+                'profile':
+                firm_data['profile'],
+                'tier':
+                tier,
+                'salary_range':
+                firm_data['profile'].get('salary_range', 'Contact for details')
             })
 
         # Advanced strategic insights with sophisticated reasoning
         insights = []
         primary_firm = top_firms[0][1]
-        
+
         # Strategic WAM positioning analysis
         wam_threshold = primary_firm['profile'].get('wam_threshold', 75)
-        top_tier_firms = [f for f in top_firms if f[1]['profile']['tier'] == 'top']
-        
+        top_tier_firms = [
+            f for f in top_firms if f[1]['profile']['tier'] == 'top'
+        ]
+
         if wam >= 85:
-            competitive_options = len([f for f in sorted_firms if f[1]['score'] >= 75])
-            insights.append(f"Your exceptional WAM ({wam:.1f}) opens doors to {competitive_options} highly competitive firms - consider applying strategically to 8-12 firms.")
+            competitive_options = len(
+                [f for f in sorted_firms if f[1]['score'] >= 75])
+            insights.append(
+                f"Your exceptional WAM ({wam:.1f}) opens doors to {competitive_options} highly competitive firms - consider applying strategically to 8-12 firms."
+            )
         elif wam >= wam_threshold + 8:
-            insights.append(f"Your strong WAM ({wam:.1f}) positions you well above market requirements - focus on firms matching your interests rather than just prestige.")
+            insights.append(
+                f"Your strong WAM ({wam:.1f}) positions you well above market requirements - focus on firms matching your interests rather than just prestige."
+            )
         elif wam_threshold - 3 <= wam < wam_threshold + 3:
-            market_trend = "competitive" if len(top_tier_firms) >= 2 else "stable"
-            insights.append(f"Your WAM is in the competitive range - in this {market_trend} market, emphasize unique experiences and genuine interest in your applications.")
+            market_trend = "competitive" if len(
+                top_tier_firms) >= 2 else "stable"
+            insights.append(
+                f"Your WAM is in the competitive range - in this {market_trend} market, emphasize unique experiences and genuine interest in your applications."
+            )
         elif wam < wam_threshold - 5:
-            mid_tier_matches = len([f for f in top_firms[:3] if f[1]['profile']['tier'] in ['mid', 'mid-top']])
+            mid_tier_matches = len([
+                f for f in top_firms[:3]
+                if f[1]['profile']['tier'] in ['mid', 'mid-top']
+            ])
             if mid_tier_matches >= 2:
-                insights.append("Focus on mid-tier firms where you'll be highly valued - they often provide excellent training and clearer pathways to partnership.")
+                insights.append(
+                    "Focus on mid-tier firms where you'll be highly valued - they often provide excellent training and clearer pathways to partnership."
+                )
             else:
-                insights.append("Consider highlighting leadership roles, work experience, and demonstrated commercial awareness to differentiate your application.")
+                insights.append(
+                    "Consider highlighting leadership roles, work experience, and demonstrated commercial awareness to differentiate your application."
+                )
 
         # University network strategy analysis
         uni_strengths = {}
@@ -1396,90 +1842,143 @@ def law_match():
             uni_pct = data['uni_percentage']
             if uni_pct >= 15:
                 uni_strengths[firm] = uni_pct
-        
+
         if len(uni_strengths) >= 2:
-            best_firm, best_pct = max(uni_strengths.items(), key=lambda x: x[1])
-            insights.append(f"Your {uni} network is particularly strong at {best_firm} ({best_pct}%) - reach out to recent graduates for insights and referrals.")
+            best_firm, best_pct = max(uni_strengths.items(),
+                                      key=lambda x: x[1])
+            insights.append(
+                f"Your {uni} network is particularly strong at {best_firm} ({best_pct}%) - reach out to recent graduates for insights and referrals."
+            )
         elif uni_strengths:
             firm, pct = list(uni_strengths.items())[0]
-            insights.append(f"Leverage your {uni} connection at {firm} ({pct}% representation) for networking opportunities.")
-        
+            insights.append(
+                f"Leverage your {uni} connection at {firm} ({pct}% representation) for networking opportunities."
+            )
+
         # Market timing and competition analysis
-        high_activity_firms = [f[0] for f in top_firms[:3] if f[1]['profile'].get('market_activity', 0) > 0.6]
+        high_activity_firms = [
+            f[0] for f in top_firms[:3]
+            if f[1]['profile'].get('market_activity', 0) > 0.6
+        ]
         if len(high_activity_firms) >= 2 and grad_year == '2025':
-            insights.append(f"Market intelligence shows {', '.join(high_activity_firms[:2])} are actively recruiting - apply early as positions fill quickly.")
-        
+            insights.append(
+                f"Market intelligence shows {', '.join(high_activity_firms[:2])} are actively recruiting - apply early as positions fill quickly."
+            )
+
         # Experience-based strategic advice
         if experience == 'extensive':
-            top_competitive = [f for f in top_firms[:2] if f[1]['profile']['competitive_level'] == 'very_high']
+            top_competitive = [
+                f for f in top_firms[:2]
+                if f[1]['profile']['competitive_level'] == 'very_high'
+            ]
             if top_competitive:
-                insights.append("Your extensive experience gives you an edge at top-tier firms - highlight specific commercial achievements and client impact.")
+                insights.append(
+                    "Your extensive experience gives you an edge at top-tier firms - highlight specific commercial achievements and client impact."
+                )
         elif experience == 'none':
-            training_focused = [f for f in top_firms[:3] if f[1]['profile']['training_score'] >= 85]
+            training_focused = [
+                f for f in top_firms[:3]
+                if f[1]['profile']['training_score'] >= 85
+            ]
             if len(training_focused) >= 2:
-                insights.append("Target firms known for exceptional graduate training - they invest heavily in developing raw talent into skilled lawyers.")
-        
+                insights.append(
+                    "Target firms known for exceptional graduate training - they invest heavily in developing raw talent into skilled lawyers."
+                )
+
         # Portfolio strategy based on score distribution
-        score_spread = top_firms[0][1]['score'] - top_firms[2][1]['score'] if len(top_firms) >= 3 else 0
-        high_confidence_matches = len([f for f in top_firms if f[1]['confidence'] in ['High', 'Very High']])
-        
+        score_spread = top_firms[0][1]['score'] - top_firms[2][1][
+            'score'] if len(top_firms) >= 3 else 0
+        high_confidence_matches = len([
+            f for f in top_firms
+            if f[1]['confidence'] in ['High', 'Very High']
+        ])
+
         if score_spread < 10 and high_confidence_matches >= 3:
-            insights.append("You have multiple excellent matches - create a balanced application portfolio across different firm tiers and practice areas.")
+            insights.append(
+                "You have multiple excellent matches - create a balanced application portfolio across different firm tiers and practice areas."
+            )
         elif high_confidence_matches >= 2:
-            insights.append(f"Strong alignment with {high_confidence_matches} firms - focus your energy on crafting compelling, firm-specific applications.")
-        
+            insights.append(
+                f"Strong alignment with {high_confidence_matches} firms - focus your energy on crafting compelling, firm-specific applications."
+            )
+
         # Interest-practice area intelligence
         practice_matches = []
         for firm, data in top_firms[:3]:
             strengths = data['profile'].get('strengths', [])
-            if interest == 'commercial' and any('Corporate' in s or 'Banking' in s or 'Finance' in s for s in strengths):
+            if interest == 'commercial' and any(
+                    'Corporate' in s or 'Banking' in s or 'Finance' in s
+                    for s in strengths):
                 practice_matches.append(firm)
-            elif interest == 'litigation' and any('Litigation' in s or 'Dispute' in s for s in strengths):
+            elif interest == 'litigation' and any(
+                    'Litigation' in s or 'Dispute' in s for s in strengths):
                 practice_matches.append(firm)
-        
+
         if len(practice_matches) >= 2:
-            insights.append(f"Your {interest} interest aligns perfectly with {', '.join(practice_matches[:2])} - research their recent major cases and deals.")
-        
+            insights.append(
+                f"Your {interest} interest aligns perfectly with {', '.join(practice_matches[:2])} - research their recent major cases and deals."
+            )
+
         # Location-based market intelligence
         if location != 'any':
-            location_matches = [f[0] for f in top_firms[:3] if location.lower() in str(f[1]['profile'].get('active_cities', [])).lower()]
+            location_matches = [
+                f[0] for f in top_firms[:3]
+                if location.lower() in str(f[1]['profile'].get(
+                    'active_cities', [])).lower()
+            ]
             if len(location_matches) >= 2:
-                insights.append(f"{location} market shows strong opportunities at {', '.join(location_matches[:2])} - consider the competitive landscape in this city.")
-        
+                insights.append(
+                    f"{location} market shows strong opportunities at {', '.join(location_matches[:2])} - consider the competitive landscape in this city."
+                )
+
         # Generate meta-strategic advice based on overall profile
         meta_insights = []
-        
+
         # Application timing strategy
         if grad_year == '2025':
             current_month = datetime.now().month
             if current_month <= 4:  # Early in recruitment season
-                meta_insights.append("Apply early - many firms fill positions on a rolling basis, especially for strong candidates.")
+                meta_insights.append(
+                    "Apply early - many firms fill positions on a rolling basis, especially for strong candidates."
+                )
             elif current_month >= 8:  # Late in season
-                meta_insights.append("Focus on firms still actively recruiting - some opportunities remain for exceptional candidates.")
-        
+                meta_insights.append(
+                    "Focus on firms still actively recruiting - some opportunities remain for exceptional candidates."
+                )
+
         # Portfolio diversification advice
         tier_distribution = {}
         for firm, data in top_firms:
             tier = data['profile']['tier']
             tier_distribution[tier] = tier_distribution.get(tier, 0) + 1
-        
+
         if len(tier_distribution) >= 2:
-            meta_insights.append("Apply across firm tiers - this maximizes opportunities while building valuable experience regardless of outcome.")
-        
+            meta_insights.append(
+                "Apply across firm tiers - this maximizes opportunities while building valuable experience regardless of outcome."
+            )
+
         # Market positioning strategy
         if preference == 'prestige' and wam >= 82:
-            meta_insights.append("With your profile, consider international firms or emerging practice areas where you can make significant early impact.")
+            meta_insights.append(
+                "With your profile, consider international firms or emerging practice areas where you can make significant early impact."
+            )
         elif preference == 'worklife' and experience == 'some':
-            meta_insights.append("Your experience and work-life priorities suggest targeting progressive firms - they often offer more flexible career paths.")
-        
-        return render_template('law_match_result.html', 
-                             recommendations=recommendations,
-                             insights=insights,
-                             meta_insights=meta_insights,
-                             user_profile={
-                                 'uni': uni, 'wam': wam, 'interest': interest, 
-                                 'preference': preference, 'experience': experience, 'location': location
-                             })
+            meta_insights.append(
+                "Your experience and work-life priorities suggest targeting progressive firms - they often offer more flexible career paths."
+            )
+
+        return render_template('law_match_result.html',
+                               recommendations=recommendations,
+                               insights=insights,
+                               meta_insights=meta_insights,
+                               user_profile={
+                                   'uni': uni,
+                                   'wam': wam,
+                                   'interest': interest,
+                                   'preference': preference,
+                                   'experience': experience,
+                                   'location': location
+                               })
 
     return render_template('law_match.html')
 
@@ -1489,14 +1988,17 @@ def tracker():
     current_user = get_current_user()
     if not current_user:
         return render_template('auth_required.html')
-    
+
     user_id = current_user['user_id']
     user_name = current_user['username']
 
     # Get user applications from database
     applications = get_user_applications(user_id)
 
-    return render_template('tracker.html', applications=applications, user_id=user_id, user_name=user_name)
+    return render_template('tracker.html',
+                           applications=applications,
+                           user_id=user_id,
+                           user_name=user_name)
 
 
 @app.route('/tracker/add', methods=['POST'])
@@ -1506,16 +2008,28 @@ def add_application():
     user_id = current_user['user_id']
 
     application_data = {
-        'user_id': user_id,
-        'company': request.form['company'],
-        'role': request.form['role'],
-        'application_date': request.form['application_date'] if request.form['application_date'] else None,
-        'university': request.form.get('university', ''),
-        'wam': request.form.get('wam', ''),
-        'status': request.form['status'],
-        'response_date': request.form.get('response_date', '') if request.form.get('response_date') else None,
-        'priority': request.form.get('priority', 'Medium'),
-        'notes': request.form.get('notes', '')
+        'user_id':
+        user_id,
+        'company':
+        request.form['company'],
+        'role':
+        request.form['role'],
+        'application_date':
+        request.form['application_date']
+        if request.form['application_date'] else None,
+        'university':
+        request.form.get('university', ''),
+        'wam':
+        request.form.get('wam', ''),
+        'status':
+        request.form['status'],
+        'response_date':
+        request.form.get('response_date', '')
+        if request.form.get('response_date') else None,
+        'priority':
+        request.form.get('priority', 'Medium'),
+        'notes':
+        request.form.get('notes', '')
     }
 
     create_application(user_id, application_data)
@@ -1532,18 +2046,22 @@ def update_application_route(app_id):
     if 'status' in request.json:
         update_data['status'] = request.json['status']
     if 'response_date' in request.json:
-        update_data['response_date'] = request.json['response_date'] if request.json['response_date'] else None
+        update_data['response_date'] = request.json[
+            'response_date'] if request.json['response_date'] else None
     if 'notes' in request.json:
         update_data['notes'] = request.json['notes']
     if 'priority' in request.json:
         update_data['priority'] = request.json['priority']
 
     updated_app = update_application(app_id, user_id, update_data)
-    
+
     if updated_app:
         return jsonify({'success': True})
     else:
-        return jsonify({'success': False, 'error': 'Application not found or access denied'}), 404
+        return jsonify({
+            'success': False,
+            'error': 'Application not found or access denied'
+        }), 404
 
 
 @app.route('/tracker/delete/<int:app_id>', methods=['DELETE'])
@@ -1553,11 +2071,14 @@ def delete_application_route(app_id):
     user_id = current_user['user_id']
 
     success = delete_application(app_id, user_id)
-    
+
     if success:
         return jsonify({'success': True})
     else:
-        return jsonify({'success': False, 'error': 'Application not found or access denied'}), 404
+        return jsonify({
+            'success': False,
+            'error': 'Application not found or access denied'
+        }), 404
 
 
 @app.route('/tracker/analytics')
@@ -1569,25 +2090,34 @@ def tracker_analytics():
     all_applications = get_all_applications()
 
     # Personal stats
-    user_apps = [app for app in all_applications if app.get('user_id') == user_id]
+    user_apps = [
+        app for app in all_applications if app.get('user_id') == user_id
+    ]
 
     total_applications = len(user_apps)
     responded_apps = [app for app in user_apps if app.get('response_date')]
-    response_rate = round((len(responded_apps) / total_applications * 100), 1) if total_applications > 0 else 0
+    response_rate = round((len(responded_apps) / total_applications *
+                           100), 1) if total_applications > 0 else 0
 
     # Calculate average response time
     response_times = []
     for app in responded_apps:
         if app.get('application_date') and app.get('response_date'):
-            app_date = datetime.strptime(app['application_date'], '%Y-%m-%d').date()
-            resp_date = datetime.strptime(app['response_date'], '%Y-%m-%d').date()
+            app_date = datetime.strptime(app['application_date'],
+                                         '%Y-%m-%d').date()
+            resp_date = datetime.strptime(app['response_date'],
+                                          '%Y-%m-%d').date()
             response_times.append((resp_date - app_date).days)
 
-    avg_response_time = round(sum(response_times) / len(response_times)) if response_times else 0
+    avg_response_time = round(sum(response_times) /
+                              len(response_times)) if response_times else 0
 
     # Success rate (offers/total)
-    successful_apps = [app for app in user_apps if app.get('status') == 'Offered']
-    success_rate = round((len(successful_apps) / total_applications * 100), 1) if total_applications > 0 else 0
+    successful_apps = [
+        app for app in user_apps if app.get('status') == 'Offered'
+    ]
+    success_rate = round((len(successful_apps) / total_applications *
+                          100), 1) if total_applications > 0 else 0
 
     personal_stats = {
         'total_applications': total_applications,
@@ -1603,31 +2133,29 @@ def tracker_analytics():
 
     # Define interview stages in progression order
     interview_stages = [
-        'Applied',
-        'Online Assessment Received',
-        'Online Assessment Completed',
-        'Phone Interview Scheduled',
-        'Phone Interview Completed',
-        'Assessment Centre Invited',
-        'Assessment Centre Completed',
-        'Final Interview Scheduled',
-        'Final Interview Completed',
-        'Offered'
+        'Applied', 'Online Assessment Received', 'Online Assessment Completed',
+        'Phone Interview Scheduled', 'Phone Interview Completed',
+        'Assessment Centre Invited', 'Assessment Centre Completed',
+        'Final Interview Scheduled', 'Final Interview Completed', 'Offered'
     ]
 
     # Aggregate from tracker data with enhanced analytics
-    company_counts = defaultdict(lambda: {
-        'total_apps': 0, 'responses': 0, 'offers': 0,
-        'avg_response_time': 0, 'response_times': []
-    })
+    company_counts = defaultdict(
+        lambda: {
+            'total_apps': 0,
+            'responses': 0,
+            'offers': 0,
+            'avg_response_time': 0,
+            'response_times': []
+        })
 
-    uni_stage_progression = defaultdict(lambda: {
-        stage: 0 for stage in interview_stages
-    })
+    uni_stage_progression = defaultdict(
+        lambda: {stage: 0
+                 for stage in interview_stages})
 
-    uni_company_progression = defaultdict(lambda: defaultdict(lambda: {
-        stage: 0 for stage in interview_stages
-    }))
+    uni_company_progression = defaultdict(
+        lambda: defaultdict(lambda: {stage: 0
+                                     for stage in interview_stages}))
 
     # Add user info from submissions.json for university data
     with open(data_file, 'r') as f:
@@ -1646,15 +2174,19 @@ def tracker_analytics():
             # Track stage progression by university and company
             status = app.get('status', 'Applied')
             uni_stage_progression[app['university']][status] += 1
-            uni_company_progression[app['university']][app['company']][status] += 1
+            uni_company_progression[app['university']][
+                app['company']][status] += 1
 
             # Calculate response times
             if app.get('response_date') and app.get('application_date'):
                 try:
-                    app_date = datetime.strptime(app['application_date'], '%Y-%m-%d').date()
-                    resp_date = datetime.strptime(app['response_date'], '%Y-%m-%d').date()
+                    app_date = datetime.strptime(app['application_date'],
+                                                 '%Y-%m-%d').date()
+                    resp_date = datetime.strptime(app['response_date'],
+                                                  '%Y-%m-%d').date()
                     response_time = (resp_date - app_date).days
-                    company_counts[app['company']]['response_times'].append(response_time)
+                    company_counts[app['company']]['response_times'].append(
+                        response_time)
                     company_counts[app['company']]['responses'] += 1
                 except:
                     pass
@@ -1668,13 +2200,21 @@ def tracker_analytics():
         if counts['total_apps'] >= 2:  # Lower threshold for more data
             avg_response_time = 0
             if counts['response_times']:
-                avg_response_time = round(sum(counts['response_times']) / len(counts['response_times']), 1)
+                avg_response_time = round(
+                    sum(counts['response_times']) /
+                    len(counts['response_times']), 1)
 
             company_stats[company] = {
-                'total_apps': counts['total_apps'],
-                'response_rate': round((counts['responses'] / counts['total_apps'] * 100), 1) if counts['total_apps'] > 0 else 0,
-                'offer_rate': round((counts['offers'] / counts['total_apps'] * 100), 1) if counts['total_apps'] > 0 else 0,
-                'avg_response_time': avg_response_time
+                'total_apps':
+                counts['total_apps'],
+                'response_rate':
+                round((counts['responses'] / counts['total_apps'] *
+                       100), 1) if counts['total_apps'] > 0 else 0,
+                'offer_rate':
+                round((counts['offers'] / counts['total_apps'] *
+                       100), 1) if counts['total_apps'] > 0 else 0,
+                'avg_response_time':
+                avg_response_time
             }
 
     # Calculate university progression statistics
@@ -1682,12 +2222,21 @@ def tracker_analytics():
         total_applied = stages.get('Applied', 0)
         if total_applied >= 2:  # Minimum threshold
             university_stats[uni] = {
-                'total_apps': total_applied,
-                'online_assessment_rate': round((stages.get('Online Assessment Received', 0) / total_applied * 100), 1) if total_applied > 0 else 0,
-                'interview_rate': round(((stages.get('Phone Interview Scheduled', 0) + stages.get('Assessment Centre Invited', 0)) / total_applied * 100), 1) if total_applied > 0 else 0,
-                'offer_rate': round((stages.get('Offered', 0) / total_applied * 100), 1) if total_applied > 0 else 0,
+                'total_apps':
+                total_applied,
+                'online_assessment_rate':
+                round((stages.get('Online Assessment Received', 0) /
+                       total_applied * 100), 1) if total_applied > 0 else 0,
+                'interview_rate':
+                round(((stages.get('Phone Interview Scheduled', 0) +
+                        stages.get('Assessment Centre Invited', 0)) /
+                       total_applied * 100), 1) if total_applied > 0 else 0,
+                'offer_rate':
+                round((stages.get('Offered', 0) / total_applied *
+                       100), 1) if total_applied > 0 else 0,
                 'stage_breakdown': {
-                    stage: stages.get(stage, 0) for stage in interview_stages
+                    stage: stages.get(stage, 0)
+                    for stage in interview_stages
                 }
             }
 
@@ -1701,21 +2250,29 @@ def tracker_analytics():
                 stage_progression[uni][company] = {
                     'total_apps': total_apps,
                     'progression': {
-                        stage: round((count / total_apps * 100), 1) if total_apps > 0 else 0 
+                        stage:
+                        round((count / total_apps *
+                               100), 1) if total_apps > 0 else 0
                         for stage, count in stages.items()
                     }
                 }
 
     # Sort by success/response rate
-    company_stats = dict(sorted(company_stats.items(), key=lambda x: x[1]['response_rate'], reverse=True)[:10])
-    university_stats = dict(sorted(university_stats.items(), key=lambda x: x[1]['success_rate'], reverse=True)[:10])
+    company_stats = dict(
+        sorted(company_stats.items(),
+               key=lambda x: x[1]['response_rate'],
+               reverse=True)[:10])
+    university_stats = dict(
+        sorted(university_stats.items(),
+               key=lambda x: x[1]['success_rate'],
+               reverse=True)[:10])
 
     return render_template('tracker_analytics.html',
-                         personal_stats=personal_stats,
-                         company_stats=company_stats,
-                         university_stats=university_stats,
-                         stage_progression=stage_progression,
-                         response_time_stats=None)
+                           personal_stats=personal_stats,
+                           company_stats=company_stats,
+                           university_stats=university_stats,
+                           stage_progression=stage_progression,
+                           response_time_stats=None)
 
 
 @app.route('/tracker/export')
@@ -1727,19 +2284,29 @@ def export_tracker():
     with open(tracker_file, 'r') as f:
         all_applications = json.load(f)
 
-    user_apps = [app for app in all_applications if app.get('user_id') == user_id]
+    user_apps = [
+        app for app in all_applications if app.get('user_id') == user_id
+    ]
 
     # Create CSV
     output_file = f'tracker_export_{user_id}.csv'
     with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['company', 'role', 'application_date', 'wam', 'status', 'response_date', 'priority', 'notes']
+        fieldnames = [
+            'company', 'role', 'application_date', 'wam', 'status',
+            'response_date', 'priority', 'notes'
+        ]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()
         for app in user_apps:
-            writer.writerow({field: app.get(field, '') for field in fieldnames})
+            writer.writerow(
+                {field: app.get(field, '')
+                 for field in fieldnames})
 
-    return send_file(output_file, as_attachment=True, download_name=f'applications_{datetime.now().strftime("%Y%m%d")}.csv')
+    return send_file(
+        output_file,
+        as_attachment=True,
+        download_name=f'applications_{datetime.now().strftime("%Y%m%d")}.csv')
 
 
 # Legal & Compliance Routes
@@ -1765,7 +2332,6 @@ def report():
 
 # Authentication routes
 # Old authentication routes removed - now using Replit Auth via headers
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
