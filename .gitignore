@@ -1,4 +1,6 @@
 attached_assets/
+*.csv
+*.json
 .env
 __pycache__/
 *.py[cod]
