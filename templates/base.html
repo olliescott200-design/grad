@@ -73,15 +73,22 @@
                 <i class="bi bi-person-circle me-1"></i>{{ user_name or 'User' }}
               </button>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="/tracker">My Applications</a></li>
+                <li><a class="dropdown-item" href="/tracker">
+                  <i class="bi bi-clipboard-check me-1"></i>My Applications
+                </a></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="javascript:alert('To sign out, please close this Replit tab or workspace.')">Sign Out Info</a></li>
+                <li><a class="dropdown-item" href="/logout">
+                  <i class="bi bi-box-arrow-right me-1"></i>Sign Out
+                </a></li>
               </ul>
             </div>
           {% else %}
-            <div class="text-muted">
-              <i class="bi bi-info-circle me-1"></i>Sign in by opening this app in Replit
-            </div>
+            <a class="btn btn-outline-primary btn-pill" href="/login">
+              <i class="bi bi-box-arrow-in-right me-1"></i>Sign In
+            </a>
+            <a class="btn btn-primary btn-pill" href="/register">
+              <i class="bi bi-person-plus me-1"></i>Register
+            </a>
           {% endif %}
         </div>
       </div>

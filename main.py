@@ -238,7 +238,7 @@ if not os.path.exists(tracker_file):
 def index():
     # Get user info from session
     current_user = get_current_user()
-    user_id = current_user['user_id'] if current_user else None
+    user_id = current_user['id'] if current_user else None
     user_name = current_user['username'] if current_user else None
 
     submissions = get_all_submissions()
@@ -396,7 +396,7 @@ def submit():
     if not current_user:
         return render_template('auth_required.html')
 
-    user_id = current_user['user_id']
+    user_id = current_user['id']
     user_name = current_user['username']
 
     if request.method == 'POST':
@@ -2073,7 +2073,7 @@ def tracker():
     if not current_user:
         return render_template('auth_required.html')
 
-    user_id = current_user['user_id']
+    user_id = current_user['id']
     user_name = current_user['username']
 
     # Get user applications from database
@@ -2089,7 +2089,7 @@ def tracker():
 @login_required
 def add_application():
     current_user = get_current_user()
-    user_id = current_user['user_id']
+    user_id = current_user['id']
 
     application_data = {
         'user_id':
@@ -2124,7 +2124,7 @@ def add_application():
 @login_required
 def update_application_route(app_id):
     current_user = get_current_user()
-    user_id = current_user['user_id']
+    user_id = current_user['id']
 
     update_data = {}
     if 'status' in request.json:
@@ -2152,7 +2152,7 @@ def update_application_route(app_id):
 @login_required
 def delete_application_route(app_id):
     current_user = get_current_user()
-    user_id = current_user['user_id']
+    user_id = current_user['id']
 
     success = delete_application(app_id, user_id)
 
@@ -2169,7 +2169,7 @@ def delete_application_route(app_id):
 @login_required
 def tracker_analytics():
     current_user = get_current_user()
-    user_id = current_user['user_id']
+    user_id = current_user['id']
 
     all_applications = get_all_applications()
 
@@ -2363,7 +2363,7 @@ def tracker_analytics():
 @login_required
 def export_tracker():
     current_user = get_current_user()
-    user_id = current_user['user_id']
+    user_id = current_user['id']
 
     with open(tracker_file, 'r') as f:
         all_applications = json.load(f)
