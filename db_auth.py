@@ -4,6 +4,7 @@ import psycopg2.extras
 from flask import request, session, jsonify
 from datetime import datetime
 from functools import wraps
+from security import get_replit_user
 
 def get_db_connection():
     """Get database connection"""
@@ -14,14 +15,16 @@ def get_db_connection():
 
 def get_current_user():
     """Get current user from Replit Auth headers"""
-    # Get user info from Replit Auth headers
-    user_id = request.headers.get('X-Replit-User-Id')
-    username = request.headers.get('X-Replit-User-Name')
+    # Use secure get_replit_user function that validates USE_REPLIT_AUTH
+    replit_user = get_replit_user(request)
+    if not replit_user:
+        return None
+    
+    # Get additional user info from headers (safe since get_replit_user validated the request)
+    user_id = replit_user['id']
+    username = replit_user['name'] 
     user_email = request.headers.get('X-Replit-User-Email')
     profile_image = request.headers.get('X-Replit-User-Profile-Image')
-    
-    if not user_id:
-        return None
     
     # Store/update user in database
     try:

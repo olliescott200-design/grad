@@ -96,6 +96,15 @@ data_file = 'submissions.json'
 app = Flask(__name__)
 harden_app(app)
 
+# Validate SECRET_KEY is properly set
+secret_key = app.config.get("SECRET_KEY")
+if secret_key in (None, "", "change-me", "please_change_me"):
+    import os
+    if os.getenv("REPL_SLUG"):  # Only in Replit environment for now
+        print("WARNING: Using default SECRET_KEY in development. Set SECRET_KEY environment variable for production.")
+    else:
+        raise RuntimeError("SECRET_KEY must be set via environment")
+
 data_file = 'submissions.json'
 tracker_file = 'applications.json'
 

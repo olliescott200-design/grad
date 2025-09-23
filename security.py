@@ -9,8 +9,13 @@ from flask_limiter.util import get_remote_address
 USE_REPLIT_AUTH = os.getenv("USE_REPLIT_AUTH", "false").lower() == "true"
 CORS_ORIGINS = [o.strip() for o in os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:3000,https://*.repl.co"
+    "http://localhost:3000"
 ).split(",") if o.strip()]
+
+# No wildcards with cookies - validate CORS origins when supports_credentials=True
+supports_credentials = True  # Set by CORS config below
+if supports_credentials and any('*' in origin for origin in CORS_ORIGINS):
+    raise RuntimeError("CORS_ORIGINS cannot contain wildcards when supports_credentials=True")
 
 def get_replit_user(req):
     """Only returns a user dict when USE_REPLIT_AUTH==true AND request came via Replit."""
