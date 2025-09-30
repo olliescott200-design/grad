@@ -411,12 +411,10 @@ def logout():
 
 @app.route('/submit', methods=['GET', 'POST'])
 @limiter.limit("30 per hour")  # Stricter limit for data modification
+@login_required
 def submit():
-    # Check if user is authenticated
+    # Get authenticated user info
     current_user = get_current_user()
-    if not current_user:
-        return render_template('auth_required.html')
-
     user_id = current_user['id']
     user_name = current_user['username']
 
@@ -2106,11 +2104,9 @@ def law_match():
 
 
 @app.route('/tracker')
+@login_required
 def tracker():
     current_user = get_current_user()
-    if not current_user:
-        return render_template('auth_required.html')
-
     user_id = current_user['id']
     user_name = current_user['username']
 
