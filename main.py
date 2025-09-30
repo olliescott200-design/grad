@@ -303,6 +303,9 @@ def index():
     sorted_companies = sorted(companies_with_stories,
                               key=lambda x: x['total_stories'],
                               reverse=True)
+    
+    # Calculate total stories across all companies
+    total_stories = sum(c['total_stories'] for c in companies_with_stories)
 
     # Load firms from CSV for Explore Companies section
     firms = load_cards("out/grad_program_signals.csv")
@@ -318,6 +321,7 @@ def index():
                            companies=companies_lookup,
                            sorted_companies=sorted_companies,
                            total_submissions=len(submissions),
+                           total_stories=total_stories,
                            firms=firms,
                            user_id=user_id,
                            user_name=user_name)
