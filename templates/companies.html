@@ -19,7 +19,9 @@
             <div class="d-flex justify-content-between align-items-start mb-3">
               <h5 class="card-title fw-bold mb-0">{{ firm.name }}</h5>
               <div class="d-flex flex-wrap gap-1">
-                <span class="badge bg-primary text-white small">{{ firm.total_submissions }} stories</span>
+                {% if firm.total_stories and firm.total_stories > 0 %}
+                  <span class="badge bg-primary text-white small">{{ firm.total_stories }} stories</span>
+                {% endif %}
                 {% if firm.avg_salary %}
                   <span class="badge bg-success text-white small">${{ "{:,}".format(firm.avg_salary) }} avg</span>
                 {% endif %}
@@ -56,9 +58,15 @@
 
             <!-- Action Button -->
             <div class="d-grid">
+              {% if firm.total_stories and firm.total_stories > 0 %}
               <a href="/company/{{ firm.name | urlencode }}" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-arrow-right me-1"></i>View All {{ firm.total_submissions }} Stories
+                <i class="bi bi-arrow-right me-1"></i>View {{ firm.total_stories }} {% if firm.total_stories == 1 %}Story{% else %}Stories{% endif %}
               </a>
+              {% else %}
+              <a href="/company/{{ firm.name | urlencode }}" class="btn btn-outline-secondary btn-sm disabled">
+                <i class="bi bi-info-circle me-1"></i>No Stories Yet
+              </a>
+              {% endif %}
             </div>
           </div>
         </div>

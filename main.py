@@ -242,6 +242,14 @@ def index():
     user_name = current_user['username'] if current_user else None
 
     submissions = get_all_submissions()
+    
+    # Load CSV experiences to get accurate counts
+    csv_experiences = load_grad_signals("out/grad_program_signals.csv")
+    csv_counts = {}
+    for exp in csv_experiences:
+        firm_name = exp.get('firm_name', '')
+        if firm_name:
+            csv_counts[firm_name] = csv_counts.get(firm_name, 0) + 1
 
     # Group submissions by company for homepage
     companies = {}
@@ -251,6 +259,7 @@ def index():
             companies[company] = {
                 'name': company,
                 'total_submissions': 0,
+                'csv_experiences': csv_counts.get(company, 0),
                 'success_count': 0,
                 'avg_salary': 0,
                 'salary_count': 0,
@@ -276,15 +285,23 @@ def index():
         else:
             company_data['avg_salary'] = None
 
-        company_data['success_rate'] = round(
-            (company_data['success_count'] / company_data['total_submissions'])
-            * 100, 1)
+        if company_data['total_submissions'] > 0:
+            company_data['success_rate'] = round(
+                (company_data['success_count'] / company_data['total_submissions'])
+                * 100, 1)
+        else:
+            company_data['success_rate'] = 0
+            
         company_data['recent_roles'] = list(
             company_data['recent_roles'])[:3]  # Show top 3 roles
+        
+        # Calculate total displayable stories (submissions + CSV experiences)
+        company_data['total_stories'] = company_data['total_submissions'] + company_data['csv_experiences']
 
-    # Sort by number of submissions
-    sorted_companies = sorted(companies.values(),
-                              key=lambda x: x['total_submissions'],
+    # Filter to only companies with actual stories, then sort
+    companies_with_stories = [c for c in companies.values() if c['total_stories'] > 0]
+    sorted_companies = sorted(companies_with_stories,
+                              key=lambda x: x['total_stories'],
                               reverse=True)
 
     # Load firms from CSV for Explore Companies section
@@ -540,6 +557,14 @@ def company_page(name):
 @app.route('/companies')
 def companies():
     submissions = get_all_submissions()
+    
+    # Load CSV experiences to get accurate counts
+    csv_experiences = load_grad_signals("out/grad_program_signals.csv")
+    csv_counts = {}
+    for exp in csv_experiences:
+        firm_name = exp.get('firm_name', '')
+        if firm_name:
+            csv_counts[firm_name] = csv_counts.get(firm_name, 0) + 1
 
     # Group submissions by company
     companies = {}
@@ -549,6 +574,7 @@ def companies():
             company_data = {
                 'name': company,
                 'total_submissions': 0,
+                'csv_experiences': csv_counts.get(company, 0),
                 'success_count': 0,
                 'experiences': [],
                 'recent_roles': set(),
@@ -577,18 +603,26 @@ def companies():
         else:
             company_data['avg_salary'] = None
 
-        company_data['success_rate'] = round(
-            (company_data['success_count'] / company_data['total_submissions'])
-            * 100, 1)
+        if company_data['total_submissions'] > 0:
+            company_data['success_rate'] = round(
+                (company_data['success_count'] / company_data['total_submissions'])
+                * 100, 1)
+        else:
+            company_data['success_rate'] = 0
+            
         company_data['recent_roles'] = list(
             company_data['recent_roles'])[:3]  # Show top 3 roles
 
         # Keep only recent experiences for display
         company_data['experiences'] = company_data['experiences'][:5]
+        
+        # Calculate total displayable stories
+        company_data['total_stories'] = company_data['total_submissions'] + company_data['csv_experiences']
 
-    # Convert to list and sort by number of submissions
-    firms = sorted(companies.values(),
-                   key=lambda x: x['total_submissions'],
+    # Filter to only companies with stories, then sort
+    companies_with_stories = [c for c in companies.values() if c['total_stories'] > 0]
+    firms = sorted(companies_with_stories,
+                   key=lambda x: x['total_stories'],
                    reverse=True)
 
     return render_template("companies.html", firms=firms)
