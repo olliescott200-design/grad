@@ -53,6 +53,35 @@ def normalize_company_name(company_name: str) -> str:
                     '+', ' + ') == normalized_spaced:
                 return canonical_name
 
+    # Fuzzy matching as fallback for typos
+    from rapidfuzz import process, fuzz
+    
+    # Build search pool: canonical names + all aliases
+    search_pool = []
+    canonical_mapping = {}
+    
+    for canonical_name, aliases in FIRM_ALIASES.items():
+        search_pool.append(canonical_name.lower())
+        canonical_mapping[canonical_name.lower()] = canonical_name
+        for alias in aliases:
+            search_pool.append(alias.lower())
+            canonical_mapping[alias.lower()] = canonical_name
+    
+    # Find best match using fuzzy matching (conservative 85% threshold)
+    result = process.extractOne(
+        normalized_input, 
+        search_pool, 
+        scorer=fuzz.ratio,
+        score_cutoff=85  # Only accept matches >= 85% similar
+    )
+    
+    if result:
+        matched_name, score, _ = result
+        canonical = canonical_mapping.get(matched_name)
+        if canonical:
+            print(f"Fuzzy match: '{company_name}' → '{canonical}' (score: {score})")
+            return canonical
+    
     # Return original if no match found (but title case it)
     return company_name.strip().title()
 
