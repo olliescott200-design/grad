@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container py-5">
   <div class="row justify-content-center">
-    <div class="col-lg-9">
+    <div class="col-lg-8">
       <!-- Header Section -->
       <div class="text-center mb-5">
         <div class="mb-4">
@@ -13,34 +13,31 @@
             <i class="bi bi-chat-heart fs-1"></i>
           </div>
         </div>
-        <h1 class="display-5 fw-bold mb-3">Share Your Graduate Experience</h1>
+        <h1 class="display-5 fw-bold mb-3">Share Your Experience</h1>
         <p class="fs-5 text-muted mb-4">
-          Help future graduates by sharing your authentic application journey. Your detailed experience could be the insight someone needs.
+          Help fellow graduates by sharing your story. Fill out what's relevant to you - every bit helps!
         </p>
         <div class="d-flex justify-content-center gap-4 text-muted small">
-          <div><i class="bi bi-shield-check me-1"></i>Anonymous & Safe</div>
-          <div><i class="bi bi-clock me-1"></i>Takes 5-10 minutes</div>
-          <div><i class="bi bi-people me-1"></i>Helps thousands of students</div>
+          <div><i class="bi bi-shield-check me-1"></i>Anonymous</div>
+          <div><i class="bi bi-clock me-1"></i>2-5 minutes</div>
+          <div><i class="bi bi-people me-1"></i>Helps thousands</div>
         </div>
       </div>
 
       <!-- Form Card -->
       <div class="card shadow-lg border-0 rounded-4">
-        <div class="card-body p-5">
+        <div class="card-body p-4 p-md-5">
           <form method="POST" class="needs-validation" novalidate>
             
-            <!-- Section 1: Basic Information -->
-            <div class="form-section mb-5">
-              <h4 class="fw-bold mb-4 text-primary d-flex align-items-center">
-                <span class="badge bg-primary rounded-circle me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">1</span>
-                Basic Information
-              </h4>
+            <!-- Basic Information (Always Visible) -->
+            <div class="mb-4">
+              <h5 class="fw-bold mb-4">📋 Basic Information</h5>
 
-              <div class="row g-4">
+              <div class="row g-3">
                 <div class="col-md-6">
-                  <label for="company" class="form-label fw-medium">Company/Firm Name *</label>
+                  <label for="company" class="form-label">Company/Firm *</label>
                   <input type="text" class="form-control" id="company" name="company" required 
-                         list="companyList" placeholder="e.g., Allens, MinterEllison">
+                         list="companyList" placeholder="e.g., Allens">
                   <datalist id="companyList">
                     <option value="Allens">
                     <option value="Ashurst">
@@ -49,35 +46,41 @@
                     <option value="Gilbert + Tobin">
                     <option value="Herbert Smith Freehills">
                     <option value="King & Wood Mallesons">
-                    <option value="Linklaters">
                     <option value="MinterEllison">
-                    <option value="Norton Rose Fulbright">
                   </datalist>
-                  <div class="invalid-feedback">Please enter the company name.</div>
                 </div>
 
                 <div class="col-md-6">
-                  <label for="role" class="form-label fw-medium">Position Title *</label>
+                  <label for="role" class="form-label">Position *</label>
                   <input type="text" class="form-control" id="role" name="role" required 
-                         placeholder="e.g., Summer Clerk, Graduate Lawyer">
-                  <div class="invalid-feedback">Please enter the position.</div>
+                         placeholder="e.g., Summer Clerk">
                 </div>
 
-                <div class="col-md-4">
-                  <label for="application_year" class="form-label fw-medium">Application Year *</label>
+                <div class="col-md-6">
+                  <label for="application_year" class="form-label">Year *</label>
                   <select class="form-select" id="application_year" name="application_year" required>
                     <option value="">Select year</option>
                     <option value="2026 Intake">2026 Intake</option>
                     <option value="2025 Intake">2025 Intake</option>
                     <option value="2024 Intake">2024 Intake</option>
                     <option value="2023 Intake">2023 Intake</option>
-                    <option value="2022 Intake">2022 Intake</option>
                   </select>
-                  <div class="invalid-feedback">Please select a year.</div>
                 </div>
 
-                <div class="col-md-4">
-                  <label for="location" class="form-label fw-medium">Location</label>
+                <div class="col-md-6">
+                  <label for="outcome" class="form-label">Outcome *</label>
+                  <select class="form-select" id="outcome" name="outcome" required>
+                    <option value="">Select outcome</option>
+                    <option value="Offer">✅ Offer</option>
+                    <option value="Rejected after Interview">❌ Rejected after Interview</option>
+                    <option value="Rejected after Application">❌ Rejected after Application</option>
+                    <option value="No Response">⏸️ No Response</option>
+                    <option value="Still Waiting">⏳ Still Waiting</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="location" class="form-label">Location</label>
                   <select class="form-select" id="location" name="location">
                     <option value="">Select location</option>
                     <option value="Sydney">Sydney</option>
@@ -86,235 +89,178 @@
                     <option value="Perth">Perth</option>
                     <option value="Adelaide">Adelaide</option>
                     <option value="Canberra">Canberra</option>
-                    <option value="Multiple Locations">Multiple Locations</option>
                   </select>
                 </div>
 
-                <div class="col-md-4">
-                  <label for="university" class="form-label fw-medium">University</label>
+                <div class="col-md-6">
+                  <label for="university" class="form-label">University</label>
                   <select class="form-select" id="university" name="university">
                     <option value="">Select university</option>
                     <option value="University of Melbourne">University of Melbourne</option>
                     <option value="University of Sydney">University of Sydney</option>
                     <option value="UNSW">UNSW</option>
                     <option value="Monash University">Monash University</option>
-                    <option value="Australian National University">Australian National University</option>
-                    <option value="University of Queensland">University of Queensland</option>
-                    <option value="Macquarie University">Macquarie University</option>
-                    <option value="University of Adelaide">University of Adelaide</option>
-                    <option value="UTS">UTS</option>
+                    <option value="ANU">ANU</option>
+                    <option value="UQ">UQ</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
-
-                <div class="col-12">
-                  <label class="form-label fw-medium">Application Outcome *</label>
-                  <div class="d-flex flex-wrap gap-3">
-                    <div class="form-check">
-                      <input class="form-check-input" type="radio" name="outcome" id="outcome_offer" value="Offer" required>
-                      <label class="form-check-label" for="outcome_offer">
-                        <i class="bi bi-check-circle-fill text-success me-1"></i>Offer
-                      </label>
-                    </div>
-                    <div class="form-check">
-                      <input class="form-check-input" type="radio" name="outcome" id="outcome_rejected_interview" value="Rejected after Interview">
-                      <label class="form-check-label" for="outcome_rejected_interview">
-                        <i class="bi bi-x-circle-fill text-danger me-1"></i>Rejected after Interview
-                      </label>
-                    </div>
-                    <div class="form-check">
-                      <input class="form-check-input" type="radio" name="outcome" id="outcome_rejected_app" value="Rejected after Application">
-                      <label class="form-check-label" for="outcome_rejected_app">
-                        <i class="bi bi-x-circle-fill text-danger me-1"></i>Rejected after Application
-                      </label>
-                    </div>
-                    <div class="form-check">
-                      <input class="form-check-input" type="radio" name="outcome" id="outcome_no_response" value="No Response">
-                      <label class="form-check-label" for="outcome_no_response">
-                        <i class="bi bi-dash-circle-fill text-secondary me-1"></i>No Response
-                      </label>
-                    </div>
-                    <div class="form-check">
-                      <input class="form-check-input" type="radio" name="outcome" id="outcome_waiting" value="Still Waiting">
-                      <label class="form-check-label" for="outcome_waiting">
-                        <i class="bi bi-clock-fill text-warning me-1"></i>Still Waiting
-                      </label>
-                    </div>
-                  </div>
-                  <div class="invalid-feedback">Please select an outcome.</div>
-                </div>
               </div>
             </div>
 
-            <!-- Section 2: Application Process Overview -->
-            <div class="form-section mb-5">
-              <h4 class="fw-bold mb-4 text-primary d-flex align-items-center">
-                <span class="badge bg-primary rounded-circle me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">2</span>
-                Application Process Overview
-              </h4>
+            <!-- Advice Section (Always Visible - Most Important) -->
+            <div class="mb-4">
+              <h5 class="fw-bold mb-3">💡 Your Top Tip *</h5>
+              <textarea class="form-control" id="advice" name="advice" rows="3" required
+                       placeholder="Share your #1 advice for future applicants. What do you wish you knew?"></textarea>
+              <div class="form-text">This is the most valuable thing you can share!</div>
+              <div class="invalid-feedback">Please provide advice for future applicants.</div>
+            </div>
 
-              <div class="row g-4">
-                <div class="col-md-6">
-                  <label class="form-label fw-medium">Overall Experience Rating</label>
-                  <div class="d-flex gap-2 align-items-center">
-                    <div class="btn-group" role="group">
-                      <input type="radio" class="btn-check" name="rating" id="rating1" value="1">
-                      <label class="btn btn-outline-warning" for="rating1">★</label>
-                      
-                      <input type="radio" class="btn-check" name="rating" id="rating2" value="2">
-                      <label class="btn btn-outline-warning" for="rating2">★★</label>
-                      
-                      <input type="radio" class="btn-check" name="rating" id="rating3" value="3">
-                      <label class="btn btn-outline-warning" for="rating3">★★★</label>
-                      
-                      <input type="radio" class="btn-check" name="rating" id="rating4" value="4">
-                      <label class="btn btn-outline-warning" for="rating4">★★★★</label>
-                      
-                      <input type="radio" class="btn-check" name="rating" id="rating5" value="5">
-                      <label class="btn btn-outline-warning" for="rating5">★★★★★</label>
+            <!-- Optional Sections (Collapsible Accordion) -->
+            <div class="accordion mb-4" id="optionalSections">
+              
+              <!-- Application Overview -->
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOverview">
+                    📊 Application Overview (Optional)
+                  </button>
+                </h2>
+                <div id="collapseOverview" class="accordion-collapse collapse" data-bs-parent="#optionalSections">
+                  <div class="accordion-body">
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label for="rating" class="form-label">Experience Rating</label>
+                        <select class="form-select" id="rating" name="rating">
+                          <option value="">Select rating</option>
+                          <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                          <option value="4">⭐⭐⭐⭐ Good</option>
+                          <option value="3">⭐⭐⭐ Average</option>
+                          <option value="2">⭐⭐ Below Average</option>
+                          <option value="1">⭐ Poor</option>
+                        </select>
+                      </div>
+
+                      <div class="col-md-6">
+                        <label for="difficulty" class="form-label">Difficulty</label>
+                        <select class="form-select" id="difficulty" name="difficulty">
+                          <option value="">Select difficulty</option>
+                          <option value="Easy">Easy</option>
+                          <option value="Average">Average</option>
+                          <option value="Hard">Hard</option>
+                          <option value="Very Hard">Very Hard</option>
+                        </select>
+                      </div>
+
+                      <div class="col-12">
+                        <label for="timeline" class="form-label">Timeline</label>
+                        <input type="text" class="form-control" id="timeline" name="timeline" 
+                               placeholder="e.g., Applied March, interview April, offer May">
+                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div class="col-md-6">
-                  <label for="difficulty" class="form-label fw-medium">Application Difficulty</label>
-                  <select class="form-select" id="difficulty" name="difficulty">
-                    <option value="">Select difficulty</option>
-                    <option value="Easy">Easy</option>
-                    <option value="Average">Average</option>
-                    <option value="Hard">Hard</option>
-                    <option value="Very Hard">Very Hard</option>
-                  </select>
-                </div>
+              <!-- Application Stages -->
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStages">
+                    📝 Application Stages (Optional)
+                  </button>
+                </h2>
+                <div id="collapseStages" class="accordion-collapse collapse" data-bs-parent="#optionalSections">
+                  <div class="accordion-body">
+                    <div class="mb-3">
+                      <label for="online_application" class="form-label">Online Application</label>
+                      <textarea class="form-control" id="online_application" name="online_application" rows="2" 
+                               placeholder="What did you submit? CV, cover letter, transcript?"></textarea>
+                    </div>
 
-                <div class="col-md-6">
-                  <label for="num_stages" class="form-label fw-medium">Number of Stages</label>
-                  <input type="number" class="form-control" id="num_stages" name="num_stages" 
-                         placeholder="e.g., 3" min="1" max="10">
-                  <div class="form-text">How many stages in the application process?</div>
-                </div>
+                    <div class="mb-3">
+                      <label for="online_assessment" class="form-label">Online Assessment</label>
+                      <textarea class="form-control" id="online_assessment" name="online_assessment" rows="2" 
+                               placeholder="Any online tests? Type, difficulty, duration?"></textarea>
+                    </div>
 
-                <div class="col-12">
-                  <label for="timeline" class="form-label fw-medium">Application Timeline</label>
-                  <textarea class="form-control" id="timeline" name="timeline" rows="2" 
-                           placeholder="e.g., Applied in March, online test in April, interviews in May, offer in June"></textarea>
-                  <div class="form-text">Brief overview of key dates and milestones</div>
+                    <div class="mb-3">
+                      <label for="interview_rounds" class="form-label">Interviews</label>
+                      <textarea class="form-control" id="interview_rounds" name="interview_rounds" rows="2" 
+                               placeholder="How many rounds? Who interviewed you? Question types?"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="assessment_centre" class="form-label">Assessment Centre</label>
+                      <textarea class="form-control" id="assessment_centre" name="assessment_centre" rows="2" 
+                               placeholder="Group exercises, presentations, case studies?"></textarea>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              <!-- Pros & Cons -->
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFeedback">
+                    👍👎 Honest Feedback (Optional)
+                  </button>
+                </h2>
+                <div id="collapseFeedback" class="accordion-collapse collapse" data-bs-parent="#optionalSections">
+                  <div class="accordion-body">
+                    <div class="mb-3">
+                      <label for="what_went_well" class="form-label">What Went Well</label>
+                      <textarea class="form-control" id="what_went_well" name="what_went_well" rows="2" 
+                               placeholder="Positive aspects of the process"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="what_could_improve" class="form-label">What Could Improve</label>
+                      <textarea class="form-control" id="what_could_improve" name="what_could_improve" rows="2" 
+                               placeholder="Areas that could be better"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Compensation & Final Thoughts -->
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExtra">
+                    💰 Salary & Final Thoughts (Optional)
+                  </button>
+                </h2>
+                <div id="collapseExtra" class="accordion-collapse collapse" data-bs-parent="#optionalSections">
+                  <div class="accordion-body">
+                    <div class="mb-3">
+                      <label for="salary" class="form-label">Compensation</label>
+                      <input type="text" class="form-control" id="salary" name="salary" 
+                             placeholder="e.g., $950/week or $85,000 + super">
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="final_thoughts" class="form-label">Final Thoughts</label>
+                      <textarea class="form-control" id="final_thoughts" name="final_thoughts" rows="2" 
+                               placeholder="Any other insights or overall impression?"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
-            <!-- Section 3: Application Stages -->
-            <div class="form-section mb-5">
-              <h4 class="fw-bold mb-4 text-primary d-flex align-items-center">
-                <span class="badge bg-primary rounded-circle me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">3</span>
-                Application Stages (Detailed)
-              </h4>
-
-              <div class="mb-4">
-                <label for="online_application" class="form-label fw-medium">
-                  <i class="bi bi-file-text me-2"></i>Online Application
-                </label>
-                <textarea class="form-control" id="online_application" name="online_application" rows="3" 
-                         placeholder="e.g., Submitted CV, transcript, and cover letter through Allens' portal. Had to answer 3 short questions about why commercial law."></textarea>
-                <div class="form-text">Describe what you submitted and the application process</div>
-              </div>
-
-              <div class="mb-4">
-                <label for="online_assessment" class="form-label fw-medium">
-                  <i class="bi bi-laptop me-2"></i>Online Assessment (if applicable)
-                </label>
-                <textarea class="form-control" id="online_assessment" name="online_assessment" rows="3" 
-                         placeholder="e.g., Situational judgment test and cognitive ability test (SHL format). Took about 45 minutes total."></textarea>
-                <div class="form-text">Include test type, format, duration, and difficulty</div>
-              </div>
-
-              <div class="mb-4">
-                <label for="interview_rounds" class="form-label fw-medium">
-                  <i class="bi bi-people me-2"></i>Interview Rounds
-                </label>
-                <textarea class="form-control" id="interview_rounds" name="interview_rounds" rows="4" 
-                         placeholder="e.g., Two rounds: First was behavioral with HR (30 min), second was competency-based with a partner (45 min). Questions focused on teamwork, problem-solving, and commercial awareness."></textarea>
-                <div class="form-text">Describe number of interviews, who interviewed you, types of questions, and format</div>
-              </div>
-
-              <div class="mb-4">
-                <label for="assessment_centre" class="form-label fw-medium">
-                  <i class="bi bi-building me-2"></i>Assessment Centre (if applicable)
-                </label>
-                <textarea class="form-control" id="assessment_centre" name="assessment_centre" rows="4" 
-                         placeholder="e.g., Full-day assessment: Group exercise analyzing a business case, individual presentation, partner Q&A, and networking lunch. Well-organized and friendly atmosphere."></textarea>
-                <div class="form-text">Include group exercises, presentations, case studies, and your experience</div>
-              </div>
-            </div>
-
-            <!-- Section 4: Experience Reflection -->
-            <div class="form-section mb-5">
-              <h4 class="fw-bold mb-4 text-primary d-flex align-items-center">
-                <span class="badge bg-primary rounded-circle me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">4</span>
-                Your Honest Reflection
-              </h4>
-
-              <div class="mb-4">
-                <label for="what_went_well" class="form-label fw-medium">
-                  <i class="bi bi-hand-thumbs-up text-success me-2"></i>What Went Well (Pros)
-                </label>
-                <textarea class="form-control" id="what_went_well" name="what_went_well" rows="3" 
-                         placeholder="e.g., Transparent communication throughout, well-structured process, friendly interviewers, timely feedback"></textarea>
-                <div class="form-text">Share positive aspects of the application process</div>
-              </div>
-
-              <div class="mb-4">
-                <label for="what_could_improve" class="form-label fw-medium">
-                  <i class="bi bi-hand-thumbs-down text-warning me-2"></i>What Could Be Better (Cons)
-                </label>
-                <textarea class="form-control" id="what_could_improve" name="what_could_improve" rows="3" 
-                         placeholder="e.g., Assessment centre felt rushed, long wait times between stages, unclear role expectations"></textarea>
-                <div class="form-text">Constructive feedback about areas for improvement</div>
-              </div>
-
-              <div class="mb-4">
-                <label for="advice" class="form-label fw-medium">
-                  <i class="bi bi-lightbulb text-primary me-2"></i>Advice to Future Applicants *
-                </label>
-                <textarea class="form-control" id="advice" name="advice" rows="4" required
-                         placeholder="e.g., Research the firm's recent deals and practice areas. Practice STAR method responses. Be yourself and show genuine interest in commercial law. Network with current grads if possible."></textarea>
-                <div class="form-text">Your top tips for applicants applying to this firm</div>
-                <div class="invalid-feedback">Please provide some advice for future applicants.</div>
-              </div>
-
-              <div class="mb-4">
-                <label for="salary" class="form-label fw-medium">
-                  <i class="bi bi-cash-stack me-2"></i>Compensation Details (Optional)
-                </label>
-                <input type="text" class="form-control" id="salary" name="salary" 
-                       placeholder="e.g., Clerkship → $950/week, Graduate → $85,000 + super">
-                <div class="form-text">Salary, bonuses, or benefits information (helps others make informed decisions)</div>
-              </div>
-
-              <div class="mb-4">
-                <label for="final_thoughts" class="form-label fw-medium">
-                  <i class="bi bi-chat-dots me-2"></i>Final Thoughts
-                </label>
-                <textarea class="form-control" id="final_thoughts" name="final_thoughts" rows="3" 
-                         placeholder="e.g., Overall, a well-structured and fair process. The firm genuinely values diversity and makes you feel welcomed. Would highly recommend applying if you're interested in commercial law."></textarea>
-                <div class="form-text">Your overall impression and recommendation</div>
-              </div>
-            </div>
-
-            <!-- Submit Section -->
-            <div class="d-grid gap-3">
+            <!-- Submit Button -->
+            <div class="d-grid gap-2">
               <button type="submit" class="btn btn-primary btn-lg">
                 <i class="bi bi-send me-2"></i>Share My Experience
               </button>
-              <a href="/" class="btn btn-outline-secondary">
-                <i class="bi bi-x-circle me-2"></i>Cancel
-              </a>
+              <a href="/" class="btn btn-link text-muted">Cancel</a>
             </div>
 
-            <div class="text-center mt-4">
+            <div class="text-center mt-3">
               <small class="text-muted">
                 <i class="bi bi-shield-lock me-1"></i>
-                Your submission is anonymous and helps thousands of students make better career decisions
+                Your submission is anonymous and helps thousands of students
               </small>
             </div>
           </form>
@@ -323,31 +269,6 @@
     </div>
   </div>
 </div>
-
-<style>
-.step-number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: var(--bs-primary);
-  color: white;
-  border-radius: 50%;
-  font-weight: bold;
-  margin-right: 12px;
-}
-
-.form-section {
-  border-left: 4px solid var(--bs-primary-bg-subtle);
-  padding-left: 24px;
-}
-
-.btn-check:checked + .btn-outline-warning {
-  background-color: #ffc107;
-  color: white;
-}
-</style>
 
 <script>
 // Form validation
