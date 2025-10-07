@@ -122,7 +122,9 @@ def create_application(user_id, application_data):
     cur.close()
     conn.close()
     
-    return dict(application)
+    if application:
+        return dict(application)
+    return None
 
 def update_application(application_id, user_id, application_data):
     """Update an existing application"""
@@ -155,7 +157,9 @@ def update_application(application_id, user_id, application_data):
     cur.close()
     conn.close()
     
-    return dict(application) if application else None
+    if application:
+        return dict(application)
+    return None if application else None
 
 def delete_application(application_id, user_id):
     """Delete an application"""
@@ -235,7 +239,9 @@ def create_submission(user_id, submission_data):
     cur.close()
     conn.close()
     
-    return dict(submission)
+    if submission:
+        return dict(submission)
+    return None
 
 def get_all_applications():
     """Get all applications for analytics"""

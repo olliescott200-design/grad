@@ -415,6 +415,9 @@ def logout():
 def submit():
     # Get authenticated user info
     current_user = get_current_user()
+    if not current_user:
+        flash('Please log in to submit an experience.', 'error')
+        return redirect(url_for('login'))
     user_id = current_user['id']
     user_name = current_user['username']
 
@@ -1231,10 +1234,6 @@ def law_match():
         candidate_profile = {
             'competitiveness':
             'high' if wam >= 82 else 'medium' if wam >= 75 else 'developing',
-            'network_strength':
-            'strong' if any(
-                FIRM_UNIVERSITY_DATA.get(f[0], {}).get(uni, 0) >= 20
-                for f in sorted_firms[:2]) else 'moderate',
             'market_timing':
             'optimal' if 2 <= datetime.now().month <= 5 else
             'late' if datetime.now().month >= 8 else 'early',
@@ -2119,6 +2118,9 @@ def law_match():
 @login_required
 def tracker():
     current_user = get_current_user()
+    if not current_user:
+        flash('Please log in to access tracker.', 'error')
+        return redirect(url_for('login'))
     user_id = current_user['id']
     user_name = current_user['username']
 
@@ -2135,6 +2137,9 @@ def tracker():
 @login_required
 def add_application():
     current_user = get_current_user()
+    if not current_user:
+        flash('Please log in to add applications.', 'error')
+        return redirect(url_for('login'))
     user_id = current_user['id']
 
     application_data = {
@@ -2170,18 +2175,21 @@ def add_application():
 @login_required
 def update_application_route(app_id):
     current_user = get_current_user()
+    if not current_user:
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
     user_id = current_user['id']
 
     update_data = {}
-    if 'status' in request.json:
-        update_data['status'] = request.json['status']
-    if 'response_date' in request.json:
-        update_data['response_date'] = request.json[
-            'response_date'] if request.json['response_date'] else None
-    if 'notes' in request.json:
-        update_data['notes'] = request.json['notes']
-    if 'priority' in request.json:
-        update_data['priority'] = request.json['priority']
+    if request.json:
+        if 'status' in request.json:
+            update_data['status'] = request.json['status']
+        if 'response_date' in request.json:
+            update_data['response_date'] = request.json[
+                'response_date'] if request.json['response_date'] else None
+        if 'notes' in request.json:
+            update_data['notes'] = request.json['notes']
+        if 'priority' in request.json:
+            update_data['priority'] = request.json['priority']
 
     updated_app = update_application(app_id, user_id, update_data)
 
@@ -2198,6 +2206,8 @@ def update_application_route(app_id):
 @login_required
 def delete_application_route(app_id):
     current_user = get_current_user()
+    if not current_user:
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
     user_id = current_user['id']
 
     success = delete_application(app_id, user_id)
@@ -2215,6 +2225,9 @@ def delete_application_route(app_id):
 @login_required
 def tracker_analytics():
     current_user = get_current_user()
+    if not current_user:
+        flash('Please log in to view analytics.', 'error')
+        return redirect(url_for('login'))
     user_id = current_user['id']
 
     all_applications = get_all_applications()
@@ -2270,7 +2283,8 @@ def tracker_analytics():
     ]
 
     # Aggregate from tracker data with enhanced analytics
-    company_counts = defaultdict(
+    from typing import Dict, List, Any
+    company_counts: Dict[str, Dict[str, Any]] = defaultdict(
         lambda: {
             'total_apps': 0,
             'responses': 0,
@@ -2299,7 +2313,9 @@ def tracker_analytics():
 
     for app in all_applications:
         if app.get('company') and app.get('university'):
-            company_counts[app['company']]['total_apps'] += 1
+            company = app['company']
+            counts = company_counts[company]
+            counts['total_apps'] += 1
 
             # Track stage progression by university and company
             status = app.get('status', 'Applied')
@@ -2315,34 +2331,35 @@ def tracker_analytics():
                     resp_date = datetime.strptime(app['response_date'],
                                                   '%Y-%m-%d').date()
                     response_time = (resp_date - app_date).days
-                    company_counts[app['company']]['response_times'].append(
-                        response_time)
-                    company_counts[app['company']]['responses'] += 1
+                    counts['response_times'].append(response_time)
+                    counts['responses'] += 1
                 except:
                     pass
 
             # Track offers
             if status == 'Offered':
-                company_counts[app['company']]['offers'] += 1
+                counts['offers'] += 1
 
     # Calculate enhanced company stats
     for company, counts in company_counts.items():
-        if counts['total_apps'] >= 2:  # Lower threshold for more data
+        total_apps = counts['total_apps']
+        if total_apps >= 2:  # Lower threshold for more data
             avg_response_time = 0
-            if counts['response_times']:
+            response_times = counts['response_times']
+            if response_times:
                 avg_response_time = round(
-                    sum(counts['response_times']) /
-                    len(counts['response_times']), 1)
+                    sum(response_times) /
+                    len(response_times), 1)
 
             company_stats[company] = {
                 'total_apps':
-                counts['total_apps'],
+                total_apps,
                 'response_rate':
-                round((counts['responses'] / counts['total_apps'] *
-                       100), 1) if counts['total_apps'] > 0 else 0,
+                round((counts['responses'] / total_apps *
+                       100), 1) if total_apps > 0 else 0,
                 'offer_rate':
-                round((counts['offers'] / counts['total_apps'] *
-                       100), 1) if counts['total_apps'] > 0 else 0,
+                round((counts['offers'] / total_apps *
+                       100), 1) if total_apps > 0 else 0,
                 'avg_response_time':
                 avg_response_time
             }
@@ -2409,6 +2426,9 @@ def tracker_analytics():
 @login_required
 def export_tracker():
     current_user = get_current_user()
+    if not current_user:
+        flash('Please log in to export data.', 'error')
+        return redirect(url_for('login'))
     user_id = current_user['id']
 
     with open(tracker_file, 'r') as f:
