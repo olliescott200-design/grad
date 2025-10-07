@@ -413,6 +413,8 @@ def submit():
     user_name = current_user['username']
 
     if request.method == 'POST':
+        from story_vetting import is_productive_story, check_duplicate_content
+        
         # Normalize company name to handle variations
         original_company = request.form['company']
         normalized_company = normalize_company_name(original_company)
@@ -445,6 +447,19 @@ def submit():
             'salary': request.form.get('salary', ''),
             'final_thoughts': request.form.get('final_thoughts', '')
         }
+        
+        # Automated vetting - check if story is productive
+        is_valid, rejection_reason = is_productive_story(submission_data)
+        if not is_valid:
+            flash(f'Story not submitted: {rejection_reason}', 'error')
+            return render_template("submit.html", user_id=user_id, user_name=user_name, form_data=submission_data)
+        
+        # Check for duplicate content
+        existing_submissions = get_all_submissions()
+        is_duplicate, duplicate_company = check_duplicate_content(submission_data, existing_submissions)
+        if is_duplicate:
+            flash(f'This story appears very similar to an existing {duplicate_company} submission. Please share unique insights from your personal experience.', 'error')
+            return render_template("submit.html", user_id=user_id, user_name=user_name, form_data=submission_data)
         
         create_submission(user_id, submission_data)
         flash('Thank you for sharing your experience! Your story will help thousands of students.', 'success')
