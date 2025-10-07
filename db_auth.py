@@ -200,30 +200,34 @@ def create_submission(user_id, submission_data):
     
     cur.execute("""
         INSERT INTO submissions (
-            user_id, company, role, experience_type, theme,
-            application_stages, interview_experience, assessment_centre,
-            program_structure, salary_benefits, culture_environment,
-            hours_workload, practice_areas, general_experience,
-            pro_tip, advice, created_at
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+            user_id, company, role, application_year, location, university, outcome,
+            rating, difficulty, num_stages, timeline,
+            online_application, online_assessment, interview_rounds, assessment_centre,
+            what_went_well, what_could_improve, advice, salary, final_thoughts,
+            created_at
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
         RETURNING *
     """, (
         user_id,
         submission_data.get('company'),
         submission_data.get('role'),
-        submission_data.get('experience_type'),
-        submission_data.get('theme'),
-        submission_data.get('application_stages'),
-        submission_data.get('interview_experience'),
+        submission_data.get('application_year'),
+        submission_data.get('location'),
+        submission_data.get('university'),
+        submission_data.get('outcome'),
+        submission_data.get('rating'),
+        submission_data.get('difficulty'),
+        submission_data.get('num_stages'),
+        submission_data.get('timeline'),
+        submission_data.get('online_application'),
+        submission_data.get('online_assessment'),
+        submission_data.get('interview_rounds'),
         submission_data.get('assessment_centre'),
-        submission_data.get('program_structure'),
-        submission_data.get('salary_benefits'),
-        submission_data.get('culture_environment'),
-        submission_data.get('hours_workload'),
-        submission_data.get('practice_areas'),
-        submission_data.get('general_experience'),
-        submission_data.get('pro_tip'),
-        submission_data.get('advice')
+        submission_data.get('what_went_well'),
+        submission_data.get('what_could_improve'),
+        submission_data.get('advice'),
+        submission_data.get('salary'),
+        submission_data.get('final_thoughts')
     ))
     
     submission = cur.fetchone()

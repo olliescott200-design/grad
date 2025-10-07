@@ -85,26 +85,88 @@
   </div>
 
 
-  <!-- Productive Stories Section -->
+  <!-- User Submitted Stories Section -->
   <div class="card mb-5">
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="card-title mb-0">
-          <i class="bi bi-star me-2"></i>Productive Stories
+          <i class="bi bi-star me-2"></i>Graduate Experiences
         </h4>
-        <a href="/stories" class="btn btn-outline-primary">
-          View All Stories
-        </a>
+        {% if entries %}
+          <span class="badge bg-primary">{{ entries|length }} stories</span>
+        {% endif %}
       </div>
 
-      <div class="text-center py-5">
-        <div class="empty-icon mb-4">
-          <i class="bi bi-lightbulb text-muted" style="font-size: 4rem;"></i>
+      {% if entries %}
+        <div class="row g-4">
+          {% for entry in entries[:10] %}
+          <div class="col-12">
+            <div class="card border-start border-primary border-4">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <div>
+                    <h5 class="mb-1">{{ entry.role }}</h5>
+                    <div class="text-muted small">
+                      {% if entry.application_year %}{{ entry.application_year }}{% endif %}
+                      {% if entry.outcome %}
+                        <span class="badge bg-{{ 'success' if 'Offer' in entry.outcome else 'secondary' }} ms-2">
+                          {{ entry.outcome }}
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% if entry.rating %}
+                    <div class="text-warning">
+                      {% for i in range(entry.rating|int) %}★{% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+
+                {% if entry.advice %}
+                <div class="mb-3">
+                  <div class="fw-bold text-primary mb-1">💡 Advice:</div>
+                  <p class="mb-0">{{ entry.advice }}</p>
+                </div>
+                {% endif %}
+
+                {% if entry.timeline %}
+                <div class="mb-2">
+                  <span class="fw-bold">Timeline:</span> {{ entry.timeline }}
+                </div>
+                {% endif %}
+
+                {% if entry.what_went_well %}
+                <div class="mb-2">
+                  <span class="fw-bold text-success">👍 What Went Well:</span> {{ entry.what_went_well }}
+                </div>
+                {% endif %}
+
+                {% if entry.what_could_improve %}
+                <div class="mb-2">
+                  <span class="fw-bold text-warning">👎 Could Improve:</span> {{ entry.what_could_improve }}
+                </div>
+                {% endif %}
+
+                {% if entry.salary %}
+                <div class="mt-2">
+                  <span class="badge bg-info">💰 {{ entry.salary }}</span>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
         </div>
-        <h4 class="fw-medium mb-3">Curated Success Stories Coming Soon</h4>
-        <p class="text-muted mb-4">We're preparing high-quality, actionable stories from {{ company }} graduates.</p>
-        <a href="/submit" class="btn btn-primary">Share Your Success Story</a>
-      </div>
+      {% else %}
+        <div class="text-center py-5">
+          <div class="empty-icon mb-4">
+            <i class="bi bi-lightbulb text-muted" style="font-size: 4rem;"></i>
+          </div>
+          <h4 class="fw-medium mb-3">No Stories Yet</h4>
+          <p class="text-muted mb-4">Be the first to share your experience with {{ company }}!</p>
+          <a href="/submit" class="btn btn-primary">Share Your Experience</a>
+        </div>
+      {% endif %}
     </div>
   </div>
 </div>
