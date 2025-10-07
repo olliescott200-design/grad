@@ -424,24 +424,36 @@ def submit():
         normalized_company = normalize_company_name(original_company)
 
         submission_data = {
+            # Basic Information
             'company': normalized_company,
             'role': request.form['role'],
-            'experience_type': request.form['experience_type'],
-            'theme': request.form['theme'],
-            'application_stages': request.form.get('application_stages', ''),
-            'interview_experience': request.form.get('interview_experience',
-                                                     ''),
+            'application_year': request.form.get('application_year', ''),
+            'location': request.form.get('location', ''),
+            'university': request.form.get('university', ''),
+            'outcome': request.form.get('outcome', ''),
+            
+            # Application Process Overview
+            'rating': request.form.get('rating', ''),
+            'difficulty': request.form.get('difficulty', ''),
+            'num_stages': request.form.get('num_stages', ''),
+            'timeline': request.form.get('timeline', ''),
+            
+            # Application Stages
+            'online_application': request.form.get('online_application', ''),
+            'online_assessment': request.form.get('online_assessment', ''),
+            'interview_rounds': request.form.get('interview_rounds', ''),
             'assessment_centre': request.form.get('assessment_centre', ''),
-            'program_structure': request.form.get('program_structure', ''),
-            'salary_benefits': request.form.get('salary_benefits', ''),
-            'culture_environment': request.form.get('culture_environment', ''),
-            'hours_workload': request.form.get('hours_workload', ''),
-            'practice_areas': request.form.get('practice_areas', ''),
-            'general_experience': request.form.get('general_experience', ''),
-            'pro_tip': request.form.get('pro_tip', ''),
-            'advice': request.form.get('advice', '')
+            
+            # Experience Reflection
+            'what_went_well': request.form.get('what_went_well', ''),
+            'what_could_improve': request.form.get('what_could_improve', ''),
+            'advice': request.form.get('advice', ''),
+            'salary': request.form.get('salary', ''),
+            'final_thoughts': request.form.get('final_thoughts', '')
         }
+        
         create_submission(user_id, submission_data)
+        flash('Thank you for sharing your experience! Your story will help thousands of students.', 'success')
         return redirect(url_for('index'))
 
     return render_template("submit.html", user_id=user_id, user_name=user_name)
