@@ -37,17 +37,13 @@
                 <div class="col-md-6">
                   <label for="company" class="form-label">Company/Firm *</label>
                   <input type="text" class="form-control" id="company" name="company" required 
-                         list="companyList" placeholder="e.g., Allens">
+                         list="companyList" placeholder="e.g., Allens, HSF, G+T">
                   <datalist id="companyList">
-                    <option value="Allens">
-                    <option value="Ashurst">
-                    <option value="Clayton Utz">
-                    <option value="Corrs Chambers Westgarth">
-                    <option value="Gilbert + Tobin">
-                    <option value="Herbert Smith Freehills">
-                    <option value="King & Wood Mallesons">
-                    <option value="MinterEllison">
+                    {% for company in company_list %}
+                    <option value="{{ company }}">
+                    {% endfor %}
                   </datalist>
+                  <small class="text-muted">Start typing to see suggestions</small>
                 </div>
 
                 <div class="col-md-6">

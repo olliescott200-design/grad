@@ -450,22 +450,25 @@ def submit():
         
         # Automated vetting - check if story is productive
         is_valid, rejection_reason = is_productive_story(submission_data)
+        company_list = sorted(list(FIRM_ALIASES.keys()))
         if not is_valid:
             flash(f'Story not submitted: {rejection_reason}', 'error')
-            return render_template("submit.html", user_id=user_id, user_name=user_name, form_data=submission_data)
+            return render_template("submit.html", user_id=user_id, user_name=user_name, form_data=submission_data, company_list=company_list)
         
         # Check for duplicate content
         existing_submissions = get_all_submissions()
         is_duplicate, duplicate_company = check_duplicate_content(submission_data, existing_submissions)
         if is_duplicate:
             flash(f'This story appears very similar to an existing {duplicate_company} submission. Please share unique insights from your personal experience.', 'error')
-            return render_template("submit.html", user_id=user_id, user_name=user_name, form_data=submission_data)
+            return render_template("submit.html", user_id=user_id, user_name=user_name, form_data=submission_data, company_list=company_list)
         
         create_submission(user_id, submission_data)
         flash('Thank you for sharing your experience! Your story will help thousands of students.', 'success')
         return redirect(url_for('index'))
 
-    return render_template("submit.html", user_id=user_id, user_name=user_name)
+    # Get all canonical company names for autocomplete
+    company_list = sorted(list(FIRM_ALIASES.keys()))
+    return render_template("submit.html", user_id=user_id, user_name=user_name, company_list=company_list)
 
 
 @app.route('/company/<name>')
