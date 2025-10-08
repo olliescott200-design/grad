@@ -30,22 +30,24 @@
           <form method="POST" class="needs-validation" novalidate>
             
             <!-- Category/Theme Selection (First Thing) -->
-            <div class="mb-4">
-              <h5 class="fw-bold mb-3">🎯 What do you want to share about?</h5>
+            <div class="mb-4 p-3 bg-light rounded">
+              <h5 class="fw-bold mb-3">🎯 Step 1: What do you want to share about? *</h5>
               <select class="form-select form-select-lg" id="storyTheme" name="theme" required>
-                <option value="">Choose a topic...</option>
+                <option value="">Choose a topic to get started...</option>
                 <option value="application_process">📝 Application Process (timeline, stages, tips)</option>
                 <option value="interview_experience">💼 Interview Experience (rounds, questions, advice)</option>
                 <option value="culture_environment">🏢 Culture & Environment (work culture, team, vibe)</option>
                 <option value="pay_benefits">💰 Pay & Benefits (salary, perks, compensation)</option>
                 <option value="general_advice">💡 General Advice (overall tips and insights)</option>
               </select>
-              <div class="form-text">We'll show you the most relevant questions for this topic</div>
+              <div class="form-text mt-2">
+                <i class="bi bi-info-circle me-1"></i>Select a topic first - the form will then show you the relevant questions
+              </div>
             </div>
 
             <!-- Basic Information (Always Visible) -->
             <div class="mb-4">
-              <h5 class="fw-bold mb-4">📋 Basic Information</h5>
+              <h5 class="fw-bold mb-4">📋 Step 2: Basic Information</h5>
 
               <div class="row g-3">
                 <div class="col-md-6">
@@ -119,6 +121,12 @@
             </div>
 
             <!-- Conditional Sections Based on Theme -->
+            
+            <!-- Placeholder message when no theme selected -->
+            <div class="alert alert-info" id="selectThemeMessage">
+              <i class="bi bi-arrow-up-circle me-2"></i>
+              <strong>Select a topic above</strong> to see the relevant questions for your story
+            </div>
             
             <!-- Application Process Theme -->
             <div class="theme-section mb-4" id="theme-application_process" style="display: none;">
@@ -432,6 +440,12 @@ document.getElementById('storyTheme').addEventListener('change', function() {
     });
   });
   
+  // Show/hide the placeholder message
+  const placeholderMsg = document.getElementById('selectThemeMessage');
+  if (placeholderMsg) {
+    placeholderMsg.style.display = selectedTheme ? 'none' : 'block';
+  }
+  
   // Show selected theme section
   if (selectedTheme) {
     const themeSection = document.getElementById('theme-' + selectedTheme);
@@ -441,6 +455,9 @@ document.getElementById('storyTheme').addEventListener('change', function() {
       themeSection.querySelectorAll('.theme-required').forEach(field => {
         field.setAttribute('required', 'required');
       });
+      
+      // Scroll to the section smoothly
+      themeSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }
 });
