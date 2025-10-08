@@ -222,18 +222,19 @@ def create_submission(user_id, submission_data):
     
     cur.execute("""
         INSERT INTO submissions (
-            user_id, company, role, application_year, location, university, outcome,
+            user_id, company, role, theme, application_year, location, university, outcome,
             rating, difficulty, num_stages, timeline,
             online_application, online_assessment, interview_rounds, assessment_centre,
             what_went_well, what_could_improve, advice, salary, final_thoughts,
             primary_category, categories,
             created_at
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
         RETURNING *
     """, (
         user_id,
         submission_data.get('company'),
         submission_data.get('role'),
+        submission_data.get('theme'),
         submission_data.get('application_year'),
         submission_data.get('location'),
         submission_data.get('university'),

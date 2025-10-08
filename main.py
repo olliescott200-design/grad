@@ -452,6 +452,7 @@ def submit():
             # Basic Information
             'company': normalized_company,
             'role': request.form['role'],
+            'theme': request.form.get('theme', ''),  # User-selected category
             'application_year': request.form.get('application_year', ''),
             'location': request.form.get('location', ''),
             'university': request.form.get('university', ''),
