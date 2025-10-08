@@ -29,6 +29,20 @@
         <div class="card-body p-4 p-md-5">
           <form method="POST" class="needs-validation" novalidate>
             
+            <!-- Category/Theme Selection (First Thing) -->
+            <div class="mb-4">
+              <h5 class="fw-bold mb-3">🎯 What do you want to share about?</h5>
+              <select class="form-select form-select-lg" id="storyTheme" name="theme" required>
+                <option value="">Choose a topic...</option>
+                <option value="application_process">📝 Application Process (timeline, stages, tips)</option>
+                <option value="interview_experience">💼 Interview Experience (rounds, questions, advice)</option>
+                <option value="culture_environment">🏢 Culture & Environment (work culture, team, vibe)</option>
+                <option value="pay_benefits">💰 Pay & Benefits (salary, perks, compensation)</option>
+                <option value="general_advice">💡 General Advice (overall tips and insights)</option>
+              </select>
+              <div class="form-text">We'll show you the most relevant questions for this topic</div>
+            </div>
+
             <!-- Basic Information (Always Visible) -->
             <div class="mb-4">
               <h5 class="fw-bold mb-4">📋 Basic Information</h5>
@@ -104,17 +118,155 @@
               </div>
             </div>
 
-            <!-- Advice Section (Always Visible - Most Important) -->
-            <div class="mb-4">
-              <h5 class="fw-bold mb-3">💡 Your Top Tip *</h5>
-              <textarea class="form-control" id="advice" name="advice" rows="3" required
-                       placeholder="Share your #1 advice for future applicants. What do you wish you knew?"></textarea>
-              <div class="form-text">This is the most valuable thing you can share!</div>
-              <div class="invalid-feedback">Please provide advice for future applicants.</div>
+            <!-- Conditional Sections Based on Theme -->
+            
+            <!-- Application Process Theme -->
+            <div class="theme-section mb-4" id="theme-application_process" style="display: none;">
+              <h5 class="fw-bold mb-3">📝 Application Process Details</h5>
+              
+              <div class="mb-3">
+                <label for="timeline" class="form-label">Timeline *</label>
+                <textarea class="form-control theme-required" id="timeline" name="timeline" rows="2" 
+                         placeholder="When did you apply? How long until you heard back?"></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="online_application" class="form-label">Online Application</label>
+                <textarea class="form-control" id="online_application" name="online_application" rows="2" 
+                         placeholder="What documents did you need? CV, cover letter, transcript?"></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="online_assessment" class="form-label">Online Assessment</label>
+                <textarea class="form-control" id="online_assessment" name="online_assessment" rows="2" 
+                         placeholder="Any online tests? Type, difficulty, how to prepare?"></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="advice" class="form-label">Application Tips *</label>
+                <textarea class="form-control theme-required" id="advice_app" name="advice" rows="3" 
+                         placeholder="Your best advice for the application process?"></textarea>
+              </div>
             </div>
 
-            <!-- Optional Sections (Collapsible Accordion) -->
-            <div class="accordion mb-4" id="optionalSections">
+            <!-- Interview Experience Theme -->
+            <div class="theme-section mb-4" id="theme-interview_experience" style="display: none;">
+              <h5 class="fw-bold mb-3">💼 Interview Experience Details</h5>
+              
+              <div class="mb-3">
+                <label for="interview_rounds" class="form-label">Interview Details *</label>
+                <textarea class="form-control theme-required" id="interview_rounds" name="interview_rounds" rows="3" 
+                         placeholder="How many rounds? Who interviewed you? What types of questions?"></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="assessment_centre" class="form-label">Assessment Centre</label>
+                <textarea class="form-control" id="assessment_centre" name="assessment_centre" rows="2" 
+                         placeholder="Group exercises, presentations, case studies? Describe the format."></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="what_went_well" class="form-label">What Went Well</label>
+                <textarea class="form-control" id="what_went_well" name="what_went_well" rows="2" 
+                         placeholder="What did you do well in the interview?"></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="what_could_improve" class="form-label">What Could Be Better</label>
+                <textarea class="form-control" id="what_could_improve" name="what_could_improve" rows="2" 
+                         placeholder="What would you do differently next time?"></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="advice" class="form-label">Interview Tips *</label>
+                <textarea class="form-control theme-required" id="advice_int" name="advice" rows="3" 
+                         placeholder="Your best advice for interview preparation?"></textarea>
+              </div>
+            </div>
+
+            <!-- Culture & Environment Theme -->
+            <div class="theme-section mb-4" id="theme-culture_environment" style="display: none;">
+              <h5 class="fw-bold mb-3">🏢 Culture & Environment</h5>
+              
+              <div class="mb-3">
+                <label for="culture_desc" class="form-label">Work Culture *</label>
+                <textarea class="form-control theme-required" id="culture_desc" name="final_thoughts" rows="3" 
+                         placeholder="Describe the work environment, team dynamics, and culture."></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="what_went_well_cult" class="form-label">What You Liked</label>
+                <textarea class="form-control" id="what_went_well_cult" name="what_went_well" rows="2" 
+                         placeholder="What aspects of the culture stood out positively?"></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="what_could_improve_cult" class="form-label">Areas for Improvement</label>
+                <textarea class="form-control" id="what_could_improve_cult" name="what_could_improve" rows="2" 
+                         placeholder="What could be better about the culture or environment?"></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="advice" class="form-label">Culture Insights *</label>
+                <textarea class="form-control theme-required" id="advice_cult" name="advice" rows="3" 
+                         placeholder="What should applicants know about working here?"></textarea>
+              </div>
+            </div>
+
+            <!-- Pay & Benefits Theme -->
+            <div class="theme-section mb-4" id="theme-pay_benefits" style="display: none;">
+              <h5 class="fw-bold mb-3">💰 Pay & Benefits</h5>
+              
+              <div class="mb-3">
+                <label for="salary" class="form-label">Salary/Compensation *</label>
+                <input type="text" class="form-control theme-required" id="salary" name="salary" 
+                       placeholder="e.g., $75,000, $80k + super">
+              </div>
+
+              <div class="mb-3">
+                <label for="benefits_desc" class="form-label">Benefits & Perks</label>
+                <textarea class="form-control" id="benefits_desc" name="final_thoughts" rows="3" 
+                         placeholder="List benefits: health insurance, WFH, overtime policy, bonuses, etc."></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="advice" class="form-label">Compensation Advice *</label>
+                <textarea class="form-control theme-required" id="advice_pay" name="advice" rows="3" 
+                         placeholder="Tips about negotiating or understanding the compensation package?"></textarea>
+              </div>
+            </div>
+
+            <!-- General Advice Theme -->
+            <div class="theme-section mb-4" id="theme-general_advice" style="display: none;">
+              <h5 class="fw-bold mb-3">💡 General Advice</h5>
+              
+              <div class="mb-3">
+                <label for="advice" class="form-label">Your Main Advice *</label>
+                <textarea class="form-control theme-required" id="advice_gen" name="advice" rows="4" 
+                         placeholder="Share your most important advice for future applicants..."></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="what_went_well_gen" class="form-label">What Worked Well</label>
+                <textarea class="form-control" id="what_went_well_gen" name="what_went_well" rows="2" 
+                         placeholder="What helped you succeed?"></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="what_could_improve_gen" class="form-label">What You'd Change</label>
+                <textarea class="form-control" id="what_could_improve_gen" name="what_could_improve" rows="2" 
+                         placeholder="What would you do differently?"></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="final_thoughts" class="form-label">Final Thoughts</label>
+                <textarea class="form-control" id="final_thoughts" name="final_thoughts" rows="2" 
+                         placeholder="Any other insights or tips?"></textarea>
+              </div>
+            </div>
+
+            <!-- Old accordion sections removed -->
+            <div class="accordion mb-4" id="optionalSections" style="display: none;">
               
               <!-- Application Overview -->
               <div class="accordion-item">
@@ -267,6 +419,32 @@
 </div>
 
 <script>
+// Theme-based section visibility
+document.getElementById('storyTheme').addEventListener('change', function() {
+  const selectedTheme = this.value;
+  
+  // Hide all theme sections
+  document.querySelectorAll('.theme-section').forEach(section => {
+    section.style.display = 'none';
+    // Remove required from all theme fields
+    section.querySelectorAll('.theme-required').forEach(field => {
+      field.removeAttribute('required');
+    });
+  });
+  
+  // Show selected theme section
+  if (selectedTheme) {
+    const themeSection = document.getElementById('theme-' + selectedTheme);
+    if (themeSection) {
+      themeSection.style.display = 'block';
+      // Add required to visible theme fields
+      themeSection.querySelectorAll('.theme-required').forEach(field => {
+        field.setAttribute('required', 'required');
+      });
+    }
+  }
+});
+
 // Form validation
 (function() {
   'use strict';
