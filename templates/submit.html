@@ -40,30 +40,6 @@
                 <option value="pay_benefits">💰 Pay & Benefits (salary, perks, compensation)</option>
                 <option value="general_advice">💡 General Advice (overall tips and insights)</option>
               </select>
-              
-              <script>
-              (function() {
-                var select = document.getElementById('storyTheme');
-                select.onchange = function() {
-                  var val = this.value;
-                  
-                  // Hide all
-                  var all = document.querySelectorAll('.theme-section');
-                  for(var i=0; i<all.length; i++) {
-                    all[i].style.display = 'none';
-                  }
-                  
-                  // Show message or section
-                  var msg = document.getElementById('selectThemeMessage');
-                  if(msg) msg.style.display = val ? 'none' : 'block';
-                  
-                  if(val) {
-                    var sec = document.getElementById('theme-' + val);
-                    if(sec) sec.style.display = 'block';
-                  }
-                };
-              })();
-              </script>
               <div class="form-text mt-2">
                 <i class="bi bi-info-circle me-1"></i>Select a topic first - the form will then show you the relevant questions
               </div>
@@ -428,6 +404,41 @@
               </div>
 
             </div>
+
+            <script>
+            (function() {
+              var select = document.getElementById('storyTheme');
+              if (select) {
+                select.onchange = function() {
+                  var val = this.value;
+                  
+                  // Hide all theme sections
+                  var sections = document.querySelectorAll('.theme-section');
+                  for(var i = 0; i < sections.length; i++) {
+                    sections[i].style.display = 'none';
+                  }
+                  
+                  // Toggle placeholder message
+                  var msg = document.getElementById('selectThemeMessage');
+                  if(msg) {
+                    msg.style.display = val ? 'none' : 'block';
+                  }
+                  
+                  // Show selected section
+                  if(val) {
+                    var section = document.getElementById('theme-' + val);
+                    if(section) {
+                      section.style.display = 'block';
+                      // Scroll to it
+                      setTimeout(function() {
+                        section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                      }, 100);
+                    }
+                  }
+                };
+              }
+            })();
+            </script>
 
             <!-- Submit Button -->
             <div class="d-grid gap-2">
