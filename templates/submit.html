@@ -428,7 +428,11 @@
 
 <script>
 // Theme-based section visibility
-document.getElementById('storyTheme').addEventListener('change', function() {
+document.addEventListener('DOMContentLoaded', function() {
+  const themeSelect = document.getElementById('storyTheme');
+  if (!themeSelect) return;
+  
+  themeSelect.addEventListener('change', function() {
   const selectedTheme = this.value;
   
   // Hide all theme sections
@@ -459,12 +463,9 @@ document.getElementById('storyTheme').addEventListener('change', function() {
       // Scroll to the section smoothly
       themeSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
-  }
-});
-
-// Form validation
-(function() {
-  'use strict';
+  });
+  
+  // Form validation
   var forms = document.querySelectorAll('.needs-validation');
   Array.prototype.slice.call(forms).forEach(function(form) {
     form.addEventListener('submit', function(event) {
@@ -475,6 +476,6 @@ document.getElementById('storyTheme').addEventListener('change', function() {
       form.classList.add('was-validated');
     }, false);
   });
-})();
+});
 </script>
 {% endblock %}
