@@ -493,8 +493,8 @@ def submit():
             return render_template("submit.html", user_id=user_id, user_name=user_name, form_data=submission_data, company_list=company_list)
         
         create_submission(user_id, submission_data)
-        flash('Thank you for sharing your experience! Your story will help thousands of students.', 'success')
-        return redirect(url_for('index'))
+        flash('✅ Success! Your experience has been shared and will help thousands of students.', 'success')
+        return render_template("submit.html", user_id=user_id, user_name=user_name, company_list=company_list, submission_success=True)
 
     # Get all canonical company names for autocomplete
     company_list = sorted(list(FIRM_ALIASES.keys()))
