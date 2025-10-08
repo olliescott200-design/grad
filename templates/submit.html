@@ -405,41 +405,6 @@
 
             </div>
 
-            <script>
-            (function() {
-              var select = document.getElementById('storyTheme');
-              if (select) {
-                select.onchange = function() {
-                  var val = this.value;
-                  
-                  // Hide all theme sections
-                  var sections = document.querySelectorAll('.theme-section');
-                  for(var i = 0; i < sections.length; i++) {
-                    sections[i].style.display = 'none';
-                  }
-                  
-                  // Toggle placeholder message
-                  var msg = document.getElementById('selectThemeMessage');
-                  if(msg) {
-                    msg.style.display = val ? 'none' : 'block';
-                  }
-                  
-                  // Show selected section
-                  if(val) {
-                    var section = document.getElementById('theme-' + val);
-                    if(section) {
-                      section.style.display = 'block';
-                      // Scroll to it
-                      setTimeout(function() {
-                        section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                      }, 100);
-                    }
-                  }
-                };
-              }
-            })();
-            </script>
-
             <!-- Submit Button -->
             <div class="d-grid gap-2">
               <button type="submit" class="btn btn-primary btn-lg">
@@ -462,3 +427,5 @@
 </div>
 
 {% endblock %}
+
+<script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
