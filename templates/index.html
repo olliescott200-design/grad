@@ -4,6 +4,22 @@
 {% block title %}GradGuide – Graduate Job Insights{% endblock %}
 
 {% block content %}
+
+<!-- Flash Messages -->
+<div class="container mt-4">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{% if category == 'error' %}danger{% else %}{{ category }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+          <i class="bi bi-{% if category == 'error' %}exclamation-triangle{% elif category == 'success' %}check-circle-fill{% else %}info-circle{% endif %} me-2"></i>
+          <strong>{{ message }}</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
+
 <!-- Hero Section -->
 <section class="hero-modern">
   <div class="container">
