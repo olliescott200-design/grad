@@ -430,40 +430,47 @@
 // Theme-based section visibility
 document.addEventListener('DOMContentLoaded', function() {
   const themeSelect = document.getElementById('storyTheme');
-  if (!themeSelect) return;
+  if (!themeSelect) {
+    console.error('Theme select not found!');
+    return;
+  }
+  
+  console.log('Theme selector initialized');
   
   themeSelect.addEventListener('change', function() {
-  const selectedTheme = this.value;
-  
-  // Hide all theme sections
-  document.querySelectorAll('.theme-section').forEach(section => {
-    section.style.display = 'none';
-    // Remove required from all theme fields
-    section.querySelectorAll('.theme-required').forEach(field => {
-      field.removeAttribute('required');
-    });
-  });
-  
-  // Show/hide the placeholder message
-  const placeholderMsg = document.getElementById('selectThemeMessage');
-  if (placeholderMsg) {
-    placeholderMsg.style.display = selectedTheme ? 'none' : 'block';
-  }
-  
-  // Show selected theme section
-  if (selectedTheme) {
-    const themeSection = document.getElementById('theme-' + selectedTheme);
-    if (themeSection) {
-      themeSection.style.display = 'block';
-      // Add required to visible theme fields
-      themeSection.querySelectorAll('.theme-required').forEach(field => {
-        field.setAttribute('required', 'required');
+    const selectedTheme = this.value;
+    console.log('Selected theme:', selectedTheme);
+    
+    // Hide all theme sections
+    document.querySelectorAll('.theme-section').forEach(section => {
+      section.style.display = 'none';
+      // Remove required from all theme fields
+      section.querySelectorAll('.theme-required').forEach(field => {
+        field.removeAttribute('required');
       });
-      
-      // Scroll to the section smoothly
-      themeSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    
+    // Show/hide the placeholder message
+    const placeholderMsg = document.getElementById('selectThemeMessage');
+    if (placeholderMsg) {
+      placeholderMsg.style.display = selectedTheme ? 'none' : 'block';
     }
-  }
+    
+    // Show selected theme section
+    if (selectedTheme) {
+      const themeSection = document.getElementById('theme-' + selectedTheme);
+      console.log('Looking for section:', 'theme-' + selectedTheme, 'Found:', themeSection);
+      if (themeSection) {
+        themeSection.style.display = 'block';
+        // Add required to visible theme fields
+        themeSection.querySelectorAll('.theme-required').forEach(field => {
+          field.setAttribute('required', 'required');
+        });
+        
+        // Scroll to the section smoothly
+        themeSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
   });
   
   // Form validation
