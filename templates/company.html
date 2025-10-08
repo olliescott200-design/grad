@@ -97,10 +97,22 @@
         {% endif %}
       </div>
 
+      {% if category_labels %}
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Filter by Category:</label>
+        <select class="form-select" id="categoryFilter" style="max-width: 300px;">
+          <option value="">All Categories</option>
+          {% for slug, label in category_labels.items() %}
+          <option value="{{ slug }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
       {% if entries %}
-        <div class="row g-4">
+        <div class="row g-4" id="storiesContainer">
           {% for entry in entries[:10] %}
-          <div class="col-12">
+          <div class="col-12 story-card" data-categories="{{ entry.categories|join(',') if entry.categories else '' }}">
             <div class="card border-start border-primary border-4">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -114,6 +126,13 @@
                         </span>
                       {% endif %}
                     </div>
+                    {% if entry.categories %}
+                    <div class="mt-2">
+                      {% for cat in entry.categories[:3] %}
+                      <span class="badge bg-light text-dark border me-1">{{ category_labels.get(cat, cat) }}</span>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
                   </div>
                   {% if entry.rating %}
                     <div class="text-warning">
@@ -473,6 +492,34 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Error loading detailed analytics:', error);
         detailedAnalyticsDiv.innerHTML = '<p class="text-muted text-center">Unable to load detailed analytics.</p>';
       });
+  }
+
+  // Category filtering
+  const categoryFilter = document.getElementById('categoryFilter');
+  if (categoryFilter) {
+    categoryFilter.addEventListener('change', function() {
+      const selectedCategory = this.value;
+      const storyCards = document.querySelectorAll('.story-card');
+      
+      storyCards.forEach(card => {
+        const categories = card.dataset.categories;
+        
+        if (!selectedCategory || categories.includes(selectedCategory)) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      
+      // Update visible count
+      const visibleCount = Array.from(storyCards).filter(card => card.style.display !== 'none').length;
+      const badge = document.querySelector('.badge.bg-primary');
+      if (badge && selectedCategory) {
+        badge.textContent = `${visibleCount} stories`;
+      } else if (badge) {
+        badge.textContent = `${storyCards.length} stories`;
+      }
+    });
   }
 });
 </script>

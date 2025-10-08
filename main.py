@@ -502,13 +502,23 @@ def submit():
 
 @app.route('/company/<name>')
 def company_page(name):
-    from categorizer import classify_text, label
+    from categorizer import classify_text, label, LABELS
 
     # Get user-submitted stories from database only
     data = get_all_submissions()
     company_entries = [
         entry for entry in data if entry['company'].lower() == name.lower()
     ]
+    
+    # Get all unique categories from entries
+    all_categories = set()
+    for entry in company_entries:
+        if entry.get('categories'):
+            all_categories.update(entry['categories'])
+    
+    # Convert category slugs to readable labels
+    category_labels = {slug: LABELS.get(slug, slug.replace('_', ' ').title()) 
+                      for slug in all_categories}
 
     # Load firm data from CSV (for company info only, not experiences)
     firms = load_cards_v2("out/grad_program_signals.csv")
@@ -577,7 +587,8 @@ def company_page(name):
                            company=name,
                            entries=company_entries,
                            stats=company_stats,
-                           firm_data=firm_data)
+                           firm_data=firm_data,
+                           category_labels=category_labels)
 
 
 @app.route('/companies')
