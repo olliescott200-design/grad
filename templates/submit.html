@@ -426,10 +426,10 @@
   </div>
 </div>
 
+{% endblock %}
+
 <script>
 function handleThemeChange(selectedTheme) {
-  alert('Theme selected: ' + selectedTheme);
-  
   // Hide all theme sections
   var sections = document.querySelectorAll('.theme-section');
   for (var i = 0; i < sections.length; i++) {
@@ -480,4 +480,3 @@ function handleThemeChange(selectedTheme) {
   });
 })();
 </script>
-{% endblock %}
