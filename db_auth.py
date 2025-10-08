@@ -199,6 +199,24 @@ def get_all_submissions():
 
 def create_submission(user_id, submission_data):
     """Create a new submission"""
+    from categorizer import classify_text
+    
+    # Combine all text content for categorization
+    text_content = ' '.join([
+        submission_data.get('advice', ''),
+        submission_data.get('what_went_well', ''),
+        submission_data.get('what_could_improve', ''),
+        submission_data.get('online_application', ''),
+        submission_data.get('online_assessment', ''),
+        submission_data.get('interview_rounds', ''),
+        submission_data.get('assessment_centre', ''),
+        submission_data.get('timeline', ''),
+        submission_data.get('final_thoughts', '')
+    ])
+    
+    # Automatically categorize the submission
+    primary_cat, all_cats, _ = classify_text(text_content, threshold=1.0, top_k=3)
+    
     conn = get_db_connection()
     cur = conn.cursor()
     
@@ -208,8 +226,9 @@ def create_submission(user_id, submission_data):
             rating, difficulty, num_stages, timeline,
             online_application, online_assessment, interview_rounds, assessment_centre,
             what_went_well, what_could_improve, advice, salary, final_thoughts,
+            primary_category, categories,
             created_at
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
         RETURNING *
     """, (
         user_id,
@@ -231,7 +250,9 @@ def create_submission(user_id, submission_data):
         submission_data.get('what_could_improve'),
         submission_data.get('advice'),
         submission_data.get('salary'),
-        submission_data.get('final_thoughts')
+        submission_data.get('final_thoughts'),
+        primary_cat,
+        all_cats
     ))
     
     submission = cur.fetchone()
