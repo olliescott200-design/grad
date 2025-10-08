@@ -32,7 +32,7 @@
             <!-- Category/Theme Selection (First Thing) -->
             <div class="mb-4 p-3 bg-light rounded">
               <h5 class="fw-bold mb-3">🎯 Step 1: What do you want to share about? *</h5>
-              <select class="form-select form-select-lg" id="storyTheme" name="theme" required>
+              <select class="form-select form-select-lg" id="storyTheme" name="theme" required onchange="handleThemeChange(this.value)">
                 <option value="">Choose a topic to get started...</option>
                 <option value="application_process">📝 Application Process (timeline, stages, tips)</option>
                 <option value="interview_experience">💼 Interview Experience (rounds, questions, advice)</option>
@@ -427,63 +427,55 @@
 </div>
 
 <script>
-// Theme-based section visibility
-document.addEventListener('DOMContentLoaded', function() {
-  const themeSelect = document.getElementById('storyTheme');
-  if (!themeSelect) {
-    console.error('Theme select not found!');
-    return;
+function handleThemeChange(selectedTheme) {
+  // Hide all theme sections
+  var sections = document.querySelectorAll('.theme-section');
+  for (var i = 0; i < sections.length; i++) {
+    sections[i].style.display = 'none';
+    var fields = sections[i].querySelectorAll('.theme-required');
+    for (var j = 0; j < fields.length; j++) {
+      fields[j].removeAttribute('required');
+    }
   }
   
-  console.log('Theme selector initialized');
+  // Show/hide placeholder message
+  var placeholderMsg = document.getElementById('selectThemeMessage');
+  if (placeholderMsg) {
+    placeholderMsg.style.display = selectedTheme ? 'none' : 'block';
+  }
   
-  themeSelect.addEventListener('change', function() {
-    const selectedTheme = this.value;
-    console.log('Selected theme:', selectedTheme);
-    
-    // Hide all theme sections
-    document.querySelectorAll('.theme-section').forEach(section => {
-      section.style.display = 'none';
-      // Remove required from all theme fields
-      section.querySelectorAll('.theme-required').forEach(field => {
-        field.removeAttribute('required');
-      });
-    });
-    
-    // Show/hide the placeholder message
-    const placeholderMsg = document.getElementById('selectThemeMessage');
-    if (placeholderMsg) {
-      placeholderMsg.style.display = selectedTheme ? 'none' : 'block';
-    }
-    
-    // Show selected theme section
-    if (selectedTheme) {
-      const themeSection = document.getElementById('theme-' + selectedTheme);
-      console.log('Looking for section:', 'theme-' + selectedTheme, 'Found:', themeSection);
-      if (themeSection) {
-        themeSection.style.display = 'block';
-        // Add required to visible theme fields
-        themeSection.querySelectorAll('.theme-required').forEach(field => {
-          field.setAttribute('required', 'required');
-        });
-        
-        // Scroll to the section smoothly
+  // Show selected theme section
+  if (selectedTheme) {
+    var themeSection = document.getElementById('theme-' + selectedTheme);
+    if (themeSection) {
+      themeSection.style.display = 'block';
+      var requiredFields = themeSection.querySelectorAll('.theme-required');
+      for (var k = 0; k < requiredFields.length; k++) {
+        requiredFields[k].setAttribute('required', 'required');
+      }
+      // Scroll to section
+      setTimeout(function() {
         themeSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
+      }, 100);
+    }
+  }
+}
+
+// Form validation
+(function() {
+  'use strict';
+  window.addEventListener('load', function() {
+    var forms = document.querySelectorAll('.needs-validation');
+    for (var i = 0; i < forms.length; i++) {
+      forms[i].addEventListener('submit', function(event) {
+        if (!this.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        this.classList.add('was-validated');
+      }, false);
     }
   });
-  
-  // Form validation
-  var forms = document.querySelectorAll('.needs-validation');
-  Array.prototype.slice.call(forms).forEach(function(form) {
-    form.addEventListener('submit', function(event) {
-      if (!form.checkValidity()) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      form.classList.add('was-validated');
-    }, false);
-  });
-});
+})();
 </script>
 {% endblock %}
