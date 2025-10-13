@@ -55,25 +55,9 @@
         <div class="card-body p-4 p-md-5">
           <form method="POST" class="needs-validation" novalidate>
             
-            <!-- Category/Theme Selection (First Thing) -->
-            <div class="mb-4 p-3 bg-light rounded">
-              <h5 class="fw-bold mb-3">🎯 Step 1: What do you want to share about? *</h5>
-              <select class="form-select form-select-lg" id="storyTheme" name="theme" required>
-                <option value="">Choose a topic to get started...</option>
-                <option value="application_process">📝 Application Process (timeline, stages, tips)</option>
-                <option value="interview_experience">💼 Interview Experience (rounds, questions, advice)</option>
-                <option value="culture_environment">🏢 Culture & Environment (work culture, team, vibe)</option>
-                <option value="pay_benefits">💰 Pay & Benefits (salary, perks, compensation)</option>
-                <option value="general_advice">💡 General Advice (overall tips and insights)</option>
-              </select>
-              <div class="form-text mt-2">
-                <i class="bi bi-info-circle me-1"></i>Select a topic first - the form will then show you the relevant questions
-              </div>
-            </div>
-
             <!-- Basic Information (Always Visible) -->
             <div class="mb-4">
-              <h5 class="fw-bold mb-4">📋 Step 2: Basic Information</h5>
+              <h5 class="fw-bold mb-4">📋 Step 1: Basic Information</h5>
 
               <div class="row g-3">
                 <div class="col-md-6">
@@ -143,6 +127,22 @@
                     <option value="Other">Other</option>
                   </select>
                 </div>
+              </div>
+            </div>
+
+            <!-- Category/Theme Selection -->
+            <div class="mb-4 p-3 bg-light rounded">
+              <h5 class="fw-bold mb-3">🎯 Step 2: What do you want to share about? *</h5>
+              <select class="form-select form-select-lg" id="storyTheme" name="theme" required>
+                <option value="">Choose a topic to get started...</option>
+                <option value="application_process">📝 Application Process (timeline, stages, tips)</option>
+                <option value="interview_experience">💼 Interview Experience (rounds, questions, advice)</option>
+                <option value="culture_environment">🏢 Culture & Environment (work culture, team, vibe)</option>
+                <option value="pay_benefits">💰 Pay & Benefits (salary, perks, compensation)</option>
+                <option value="general_advice">💡 General Advice (overall tips and insights)</option>
+              </select>
+              <div class="form-text mt-2">
+                <i class="bi bi-info-circle me-1"></i>Select a topic - the form will then show you the relevant questions
               </div>
             </div>
 
