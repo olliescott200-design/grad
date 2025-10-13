@@ -18,7 +18,7 @@ jobs:
         with:
           config: p/ci
           generateSarif: "1"
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         with: { sarif_file: semgrep.sarif }
 
   bandit:
@@ -29,7 +29,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install bandit
           bandit -r . -f sarif -o bandit.sarif || true
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         with: { sarif_file: bandit.sarif }
 
   pip_audit:
@@ -40,7 +40,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pip-audit
           if [ -f requirements.txt ]; then pip-audit -r requirements.txt -f sarif -o pip-audit.sarif || true; else pip-audit -f sarif -o pip-audit.sarif || true; fi
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         with: { sarif_file: pip-audit.sarif }
 
   gitleaks:
@@ -50,5 +50,5 @@ jobs:
         with: { fetch-depth: 0 }
       - uses: gitleaks/gitleaks-action@v2
         with: { args: --report-format sarif --report-path gitleaks.sarif }
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         with: { sarif_file: gitleaks.sarif }
