@@ -30,7 +30,7 @@
       <div class="card-body">
         <h4 class="card-title mb-3">Add New Application</h4>
         <form method="POST" action="/tracker/add" class="row g-3">
-          {{ csrf_token() }}
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <div class="col-md-4">
             <label class="form-label">Company</label>
             <input name="company" class="form-control" required>

@@ -18,7 +18,7 @@
   </div>
 
   <form method="POST" class="row g-4">
-    {{ csrf_token() }}
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <div class="col-md-6">
       <label class="form-label">Which uni are you at?</label>
       <input type="text" name="uni" class="form-control" placeholder="e.g. Monash University" required>

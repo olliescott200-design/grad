@@ -16,7 +16,7 @@
       </div>
 
       <form id="reportForm" class="needs-validation" novalidate>
-        {{ csrf_token() }}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div class="card shadow-sm">
           <div class="card-body">
             <div class="row g-3">
