@@ -39,50 +39,6 @@
           </div>
           <div class="card-body p-4">
             
-            <!-- Basic Information -->
-            <div class="mb-4">
-              <h5 class="text-primary mb-3"><i class="bi bi-building me-2"></i>Basic Information</h5>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <strong>Company:</strong> {{ submitted_data.company }}
-                </div>
-                <div class="col-md-6">
-                  <strong>Role:</strong> {{ submitted_data.role }}
-                </div>
-                {% if submitted_data.application_year %}
-                <div class="col-md-6">
-                  <strong>Year:</strong> {{ submitted_data.application_year }}
-                </div>
-                {% endif %}
-                {% if submitted_data.outcome %}
-                <div class="col-md-6">
-                  <strong>Outcome:</strong> {{ submitted_data.outcome }}
-                </div>
-                {% endif %}
-                {% if submitted_data.location %}
-                <div class="col-md-6">
-                  <strong>Location:</strong> {{ submitted_data.location }}
-                </div>
-                {% endif %}
-                {% if submitted_data.university %}
-                <div class="col-md-6">
-                  <strong>University:</strong> {{ submitted_data.university }}
-                </div>
-                {% endif %}
-                {% if submitted_data.wam %}
-                <div class="col-md-6">
-                  <strong>WAM:</strong> {{ submitted_data.wam }}
-                </div>
-                {% endif %}
-                {% if submitted_data.theme %}
-                <div class="col-md-12">
-                  <strong>Topic:</strong> 
-                  <span class="badge bg-primary">{{ submitted_data.theme.replace('_', ' ').title() }}</span>
-                </div>
-                {% endif %}
-              </div>
-            </div>
-
             <!-- Application Process Details -->
             {% if submitted_data.timeline or submitted_data.online_application or submitted_data.online_assessment %}
             <div class="mb-4">
