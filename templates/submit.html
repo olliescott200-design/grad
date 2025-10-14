@@ -54,6 +54,7 @@
       <div class="card shadow-lg border-0 rounded-4">
         <div class="card-body p-4 p-md-5">
           <form method="POST" class="needs-validation" novalidate>
+            {{ csrf_token() }}
             
             <!-- Basic Information (Always Visible) -->
             <div class="mb-4">

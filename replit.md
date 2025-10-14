@@ -1,6 +1,18 @@
 # Overview
 
-Gradvantage is a Flask-based web application that aggregates and displays graduate job experiences and insights for Australian law firms. The platform processes forum data (particularly from Whirlpool) and user submissions to provide structured information about clerkships, graduate programs, salaries, and application processes. The system includes data processing pipelines, content categorization, quality scoring, and experience filtering to deliver meaningful insights to law students and graduates.
+GradGuide is a production-ready Flask web application for law students and graduates to track job applications and share authentic experiences about law firms and graduate programs. The system uses custom authentication (username/email and password), PostgreSQL database, automated quality control for submissions, and smart categorization to help users find relevant advice easily.
+
+# Recent Changes
+
+## October 2025: Production Refactoring
+- **Migrated from Flask dev server to Gunicorn** with 2 workers and 4 threads per worker
+- **Implemented app factory pattern** with modular blueprint architecture
+- **Added comprehensive security**: CSRF protection, rate limiting (Flask-Limiter), HTTPS headers (Talisman)
+- **Restructured codebase**: Created `server/` package with `__init__.py` (app factory), `views_public.py` (blueprint routes), `support.py` (shared utilities), and `caching.py` (analytics caching)
+- **Enhanced error handling**: Custom 404 and 500 error pages with branded design
+- **Optimized caching**: Implemented cache headers (1 year for static assets, no-cache for dynamic pages)
+- **Added CSRF tokens to all forms**: login, register, submit, tracker, law match, and report forms
+- **Environment-aware security**: Talisman disabled in Replit development, enabled in production deployment
 
 # User Preferences
 
@@ -9,11 +21,13 @@ Preferred communication style: Simple, everyday language.
 # System Architecture
 
 ## Core Application Stack
-- **Backend Framework**: Flask with Python 3.x
+- **Backend Framework**: Flask 3.0.3 with app factory pattern and blueprints
+- **Production Server**: Gunicorn 22.0.0 (2 workers, 4 threads/worker)
 - **Template Engine**: Jinja2 for server-side rendering
-- **Data Storage**: JSON files for submissions and application tracking
+- **Database**: PostgreSQL (Neon-backed) for users, submissions, and applications
+- **Data Storage**: Legacy JSON files + PostgreSQL database
 - **Frontend**: HTML/CSS with Bootstrap 5.3 and custom styling
-- **Authentication**: Replit's ReplAuth system using HTTP headers
+- **Authentication**: Custom auth system with bcrypt password hashing
 
 ## Data Processing Pipeline
 - **CSV Data Sources**: Multiple forum data files (law_raw.csv, law_whirlpool_2018_2025.csv, raw_all.csv)
@@ -31,17 +45,27 @@ Preferred communication style: Simple, everyday language.
 
 ## File Organization
 ```
-├── main.py (Flask application)
-├── submissions.json (user submissions)
-├── applications.json (application tracking)
-├── templates/ (Jinja2 templates)
+├── main.py (Application entry point, exports app for Gunicorn)
+├── server/ (Production application package)
+│   ├── __init__.py (App factory with security setup)
+│   ├── views_public.py (Blueprint with all routes)
+│   ├── support.py (Shared utilities and constants)
+│   └── caching.py (LRU caching for analytics)
+├── submissions.json (Legacy user submissions)
+├── applications.json (Legacy application tracking)
+├── templates/ (Jinja2 templates with CSRF tokens)
 ├── static/ (CSS, JS assets)
-├── extractors.py (firm aliases and data extraction)
-├── categorizer.py (content classification)
-├── experience_*.py (quality filtering pipelines)
+├── db_auth.py (Database operations for PostgreSQL)
+├── auth_utils.py (Authentication helpers)
+├── security.py (Security configuration)
+├── story_vetting.py (Quality control for submissions)
+├── extractors.py (Firm aliases and data extraction)
+├── categorizer.py (Content classification)
+├── experience_*.py (Quality filtering pipelines)
 ├── grad_data*.py (CSV data processing)
-├── legal_config.py (compliance configuration)
-└── out/ (processed data outputs)
+├── legal_config.py (Compliance configuration)
+├── Procfile (Gunicorn deployment configuration)
+└── out/ (Processed data outputs)
 ```
 
 ## Data Models
@@ -53,12 +77,26 @@ Preferred communication style: Simple, everyday language.
 # External Dependencies
 
 ## Required Python Packages
+- **Flask 3.0.3**: Web framework with app factory pattern
+- **Gunicorn 22.0.0**: Production WSGI server
+- **Flask-WTF**: CSRF protection for forms
+- **Flask-Limiter**: Rate limiting (100 requests/minute default)
+- **Flask-Talisman**: HTTPS enforcement and security headers
+- **Flask-CORS**: Cross-origin resource sharing
+- **psycopg2-binary**: PostgreSQL database adapter
+- **bcrypt** (via Werkzeug): Password hashing for authentication
+- **rapidfuzz**: Fuzzy string matching for company name normalization
 - **pandas**: Data manipulation and CSV processing
 - **python-dateutil**: Date parsing and handling
 - **pyarrow**: Parquet file support for data storage
 
-## Authentication
-- **Replit ReplAuth**: User authentication via HTTP headers (X-Replit-User-* headers)
+## Security & Authentication
+- **Custom Authentication**: Username/email + password with bcrypt hashing
+- **CSRF Protection**: Flask-WTF with tokens in all forms
+- **Rate Limiting**: Flask-Limiter with configurable limits per route (10/min login, 5/min registration, 30/hour submissions)
+- **HTTPS Enforcement**: Flask-Talisman in production (disabled in Replit dev for easier testing)
+- **Secure Sessions**: HTTP-only, secure cookies with SameSite=Lax
+- **Password Requirements**: Minimum 8 characters with uppercase, lowercase, and numbers
 
 ## Frontend Libraries
 - **Bootstrap 5.3**: CSS framework via CDN
