@@ -69,6 +69,11 @@
                   <strong>University:</strong> {{ submitted_data.university }}
                 </div>
                 {% endif %}
+                {% if submitted_data.wam %}
+                <div class="col-md-6">
+                  <strong>WAM:</strong> {{ submitted_data.wam }}
+                </div>
+                {% endif %}
                 {% if submitted_data.theme %}
                 <div class="col-md-12">
                   <strong>Topic:</strong> 
@@ -268,6 +273,13 @@
                     <option value="UQ">UQ</option>
                     <option value="Other">Other</option>
                   </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="wam" class="form-label">WAM (Weighted Average Mark)</label>
+                  <input type="text" class="form-control" id="wam" name="wam" 
+                         placeholder="e.g., 75, 80-85, H1">
+                  <small class="text-muted">Optional - can be a number, range, or grade</small>
                 </div>
               </div>
             </div>
