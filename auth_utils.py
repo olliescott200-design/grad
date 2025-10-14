@@ -207,6 +207,6 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         if not get_current_user():
             flash('You need to log in to access this page.', 'warning')
-            return redirect(url_for('login'))
+            return redirect(url_for('public.login'))
         return f(*args, **kwargs)
     return decorated_function
