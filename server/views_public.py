@@ -242,7 +242,8 @@ def create_blueprint(limiter):
             create_submission(user_id, submission_data)
             flash('✅ Success! Your experience has been shared and will help thousands of students.', 'success')
             return render_template("submit.html", user_id=user_id, user_name=user_name,
-                                   company_list=company_list, submission_success=True)
+                                   company_list=company_list, submission_success=True, 
+                                   submitted_data=submission_data)
 
         company_list = sorted(list(FIRM_ALIASES.keys()))
         return render_template("submit.html", user_id=user_id, user_name=user_name, company_list=company_list)

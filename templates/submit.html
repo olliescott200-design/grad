@@ -30,6 +30,147 @@
             <a href="/submit" class="btn btn-outline-light btn-lg">Share Another</a>
           </div>
         </div>
+
+        <!-- Submitted Experience Details Card -->
+        {% if submitted_data %}
+        <div class="card shadow-lg border-0 mb-4">
+          <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="bi bi-file-text me-2"></i>Your Submitted Experience</h4>
+          </div>
+          <div class="card-body p-4">
+            
+            <!-- Basic Information -->
+            <div class="mb-4">
+              <h5 class="text-primary mb-3"><i class="bi bi-building me-2"></i>Basic Information</h5>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <strong>Company:</strong> {{ submitted_data.company }}
+                </div>
+                <div class="col-md-6">
+                  <strong>Role:</strong> {{ submitted_data.role }}
+                </div>
+                {% if submitted_data.application_year %}
+                <div class="col-md-6">
+                  <strong>Year:</strong> {{ submitted_data.application_year }}
+                </div>
+                {% endif %}
+                {% if submitted_data.outcome %}
+                <div class="col-md-6">
+                  <strong>Outcome:</strong> {{ submitted_data.outcome }}
+                </div>
+                {% endif %}
+                {% if submitted_data.location %}
+                <div class="col-md-6">
+                  <strong>Location:</strong> {{ submitted_data.location }}
+                </div>
+                {% endif %}
+                {% if submitted_data.university %}
+                <div class="col-md-6">
+                  <strong>University:</strong> {{ submitted_data.university }}
+                </div>
+                {% endif %}
+                {% if submitted_data.theme %}
+                <div class="col-md-12">
+                  <strong>Topic:</strong> 
+                  <span class="badge bg-primary">{{ submitted_data.theme.replace('_', ' ').title() }}</span>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Application Process Details -->
+            {% if submitted_data.timeline or submitted_data.online_application or submitted_data.online_assessment %}
+            <div class="mb-4">
+              <h5 class="text-primary mb-3"><i class="bi bi-calendar-event me-2"></i>Application Process</h5>
+              {% if submitted_data.timeline %}
+              <div class="mb-3">
+                <strong>Timeline:</strong>
+                <p class="mb-0 text-muted">{{ submitted_data.timeline }}</p>
+              </div>
+              {% endif %}
+              {% if submitted_data.online_application %}
+              <div class="mb-3">
+                <strong>Online Application:</strong>
+                <p class="mb-0 text-muted">{{ submitted_data.online_application }}</p>
+              </div>
+              {% endif %}
+              {% if submitted_data.online_assessment %}
+              <div class="mb-3">
+                <strong>Online Assessment:</strong>
+                <p class="mb-0 text-muted">{{ submitted_data.online_assessment }}</p>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Interview Details -->
+            {% if submitted_data.interview_rounds or submitted_data.assessment_centre %}
+            <div class="mb-4">
+              <h5 class="text-primary mb-3"><i class="bi bi-people me-2"></i>Interview Experience</h5>
+              {% if submitted_data.interview_rounds %}
+              <div class="mb-3">
+                <strong>Interview Rounds:</strong>
+                <p class="mb-0 text-muted">{{ submitted_data.interview_rounds }}</p>
+              </div>
+              {% endif %}
+              {% if submitted_data.assessment_centre %}
+              <div class="mb-3">
+                <strong>Assessment Centre:</strong>
+                <p class="mb-0 text-muted">{{ submitted_data.assessment_centre }}</p>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Experience Reflection -->
+            {% if submitted_data.what_went_well or submitted_data.what_could_improve %}
+            <div class="mb-4">
+              <h5 class="text-primary mb-3"><i class="bi bi-lightbulb me-2"></i>Reflection</h5>
+              {% if submitted_data.what_went_well %}
+              <div class="mb-3">
+                <strong>What Went Well:</strong>
+                <p class="mb-0 text-muted">{{ submitted_data.what_went_well }}</p>
+              </div>
+              {% endif %}
+              {% if submitted_data.what_could_improve %}
+              <div class="mb-3">
+                <strong>What Could Improve:</strong>
+                <p class="mb-0 text-muted">{{ submitted_data.what_could_improve }}</p>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Advice & Final Thoughts -->
+            {% if submitted_data.advice or submitted_data.final_thoughts %}
+            <div class="mb-4">
+              <h5 class="text-primary mb-3"><i class="bi bi-chat-dots me-2"></i>Advice & Tips</h5>
+              {% if submitted_data.advice %}
+              <div class="mb-3">
+                <strong>Advice:</strong>
+                <p class="mb-0 text-muted">{{ submitted_data.advice }}</p>
+              </div>
+              {% endif %}
+              {% if submitted_data.final_thoughts %}
+              <div class="mb-3">
+                <strong>Final Thoughts:</strong>
+                <p class="mb-0 text-muted">{{ submitted_data.final_thoughts }}</p>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Salary Information -->
+            {% if submitted_data.salary %}
+            <div class="mb-3">
+              <h5 class="text-primary mb-3"><i class="bi bi-cash-stack me-2"></i>Compensation</h5>
+              <strong>Salary:</strong> ${{ submitted_data.salary }}
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+        {% endif %}
       {% endif %}
 
       <!-- Header Section -->
