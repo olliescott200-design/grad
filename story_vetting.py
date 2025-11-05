@@ -1,51 +1,151 @@
 """
-Automated story vetting system to ensure quality submissions
+Intelligent submission vetting system to ensure quality contributions
+Uses multi-factor scoring to evaluate authenticity and usefulness
 """
+
+import re
 
 def is_productive_story(submission_data):
     """
-    Check if a story submission is productive and valuable
+    Intelligent content quality assessment using multiple signals
     Returns: (is_valid, rejection_reason)
     """
     
-    # Get key fields
-    advice = submission_data.get('advice', '').strip()
-    what_went_well = submission_data.get('what_went_well', '').strip()
-    what_could_improve = submission_data.get('what_could_improve', '').strip()
+    # Get ALL Step 2 content fields
+    step2_fields = {
+        'timeline': submission_data.get('timeline', '').strip(),
+        'online_application': submission_data.get('online_application', '').strip(),
+        'online_assessment': submission_data.get('online_assessment', '').strip(),
+        'interview_rounds': submission_data.get('interview_rounds', '').strip(),
+        'assessment_centre': submission_data.get('assessment_centre', '').strip(),
+        'what_went_well': submission_data.get('what_went_well', '').strip(),
+        'what_could_improve': submission_data.get('what_could_improve', '').strip(),
+        'advice': submission_data.get('advice', '').strip(),
+        'final_thoughts': submission_data.get('final_thoughts', '').strip(),
+        'salary': submission_data.get('salary', '').strip()
+    }
     
-    # Combine all text content for checking
-    all_content = f"{advice} {what_went_well} {what_could_improve}".strip()
+    # Combine all non-empty fields for analysis
+    all_content = ' '.join([field for field in step2_fields.values() if field])
     
-    # Rule 1: Check minimum content length (relaxed to 5 characters)
-    if len(all_content) < 5:
-        return False, "Please provide some information to help other students."
+    # Rule 1: Must have SOME content
+    if not all_content or len(all_content) < 3:
+        return False, "Please fill in at least one field in Step 2 to share your experience."
     
-    # Rule 2: Reject if it's ONLY a very short question (more lenient)
-    if all_content.endswith('?') and len(all_content.split()) < 5:
-        return False, "Please share your experience or advice rather than asking questions."
+    # Rule 2: Reject pure questions with no experience
+    question_count = all_content.count('?')
+    word_count = len(all_content.split())
+    if question_count >= 2 and word_count < 15:
+        return False, "Please share your experience rather than just asking questions."
     
-    # Rule 3: Check for conversation snippets (more lenient - 10 words)
-    if all_content.startswith('"') or all_content.startswith("'"):
-        if len(all_content.split()) < 10:
-            return False, "Please provide complete advice rather than conversation snippets."
-    
-    # Rule 4: Reject generic/templated responses (more lenient - only very short generic ones)
-    generic_phrases = [
-        "be genuine in your interest, prepare thoroughly, and show enthusiasm for learning",
-        "be genuine and prepare thoroughly"
+    # Rule 3: Check for spam/irrelevant patterns
+    spam_patterns = [
+        r'\b(buy|sale|discount|offer|click here|visit|website)\b',
+        r'http[s]?://',  # URLs (usually spam)
+        r'\b(viagra|casino|lottery|prize)\b'
     ]
-    
     content_lower = all_content.lower()
-    for phrase in generic_phrases:
-        if phrase == content_lower.strip():  # Only exact matches of generic templates
-            return False, "Please share specific, personalized advice from your experience."
+    for pattern in spam_patterns:
+        if re.search(pattern, content_lower):
+            return False, "Please share genuine graduate experiences only."
     
-    # Rule 5: Check for minimum meaningful words (relaxed to 2 words)
-    meaningful_words = [word for word in all_content.split() if len(word) > 3]
-    if len(meaningful_words) < 2:
-        return False, "Please provide a bit more detail."
+    # Rule 4: Detect extremely generic/low-effort content
+    ultra_generic = [
+        r'^(good luck|best wishes|hope this helps)[\s\.\!]*$',
+        r'^(thanks|thank you|cheers)[\s\.\!]*$',
+        r'^(ok|okay|cool|nice)[\s\.\!]*$'
+    ]
+    if word_count < 4:
+        for pattern in ultra_generic:
+            if re.match(pattern, content_lower):
+                return False, "Please provide more detailed insights from your experience."
+    
+    # Calculate quality score (0-100)
+    quality_score = calculate_quality_score(all_content, step2_fields)
+    
+    # Rule 5: Minimum quality threshold (score must be >= 25/100)
+    if quality_score < 25:
+        return False, "Please provide more specific details from your personal experience to help other students."
     
     return True, None
+
+
+def calculate_quality_score(content, fields_dict):
+    """
+    Calculate content quality score based on multiple factors
+    Returns: score (0-100)
+    """
+    score = 0
+    word_count = len(content.split())
+    
+    # Factor 1: Content length (0-25 points)
+    if word_count >= 50:
+        score += 25
+    elif word_count >= 30:
+        score += 20
+    elif word_count >= 15:
+        score += 15
+    elif word_count >= 8:
+        score += 10
+    elif word_count >= 4:
+        score += 5
+    
+    # Factor 2: Personal experience indicators (0-25 points)
+    personal_indicators = [
+        r'\bI\b', r'\bmy\b', r'\bme\b', r'\bmine\b',
+        r'\bwe\b', r'\bour\b', r'\bus\b',
+        r'\bwas\b', r'\bdid\b', r'\bhad\b', r'\bgot\b'
+    ]
+    personal_count = sum(1 for indicator in personal_indicators 
+                        if re.search(indicator, content, re.IGNORECASE))
+    if personal_count >= 5:
+        score += 25
+    elif personal_count >= 3:
+        score += 15
+    elif personal_count >= 1:
+        score += 8
+    
+    # Factor 3: Specific details (0-25 points)
+    specificity_indicators = [
+        r'\d+',  # Numbers
+        r'\b(January|February|March|April|May|June|July|August|September|October|November|December)\b',
+        r'\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b',
+        r'\b(week|month|day|hour)\b',
+        r'\b(round|stage|interview|assessment|test)\b',
+        r'\b(CV|resume|cover letter|transcript|portfolio)\b'
+    ]
+    specificity_count = sum(1 for indicator in specificity_indicators 
+                           if re.search(indicator, content, re.IGNORECASE))
+    if specificity_count >= 5:
+        score += 25
+    elif specificity_count >= 3:
+        score += 15
+    elif specificity_count >= 1:
+        score += 8
+    
+    # Factor 4: Multiple fields filled (0-15 points)
+    filled_fields = sum(1 for field in fields_dict.values() if field and len(field) > 3)
+    if filled_fields >= 4:
+        score += 15
+    elif filled_fields >= 3:
+        score += 10
+    elif filled_fields >= 2:
+        score += 5
+    
+    # Factor 5: Actionable advice indicators (0-10 points)
+    advice_indicators = [
+        r'\b(recommend|suggest|advice|tip|prepare|practice|study|research)\b',
+        r'\b(make sure|be sure to|don\'t forget|remember to)\b',
+        r'\b(helpful|useful|important|key|crucial|essential)\b'
+    ]
+    advice_count = sum(1 for indicator in advice_indicators 
+                      if re.search(indicator, content, re.IGNORECASE))
+    if advice_count >= 3:
+        score += 10
+    elif advice_count >= 1:
+        score += 5
+    
+    return min(100, score)
 
 
 def check_duplicate_content(new_submission, existing_submissions):
