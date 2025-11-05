@@ -281,8 +281,8 @@ def delete_submission(submission_id):
 
 def is_admin(user_id):
     """Check if a user is an admin"""
-    # Admin user IDs - replace with actual admin user ID
-    ADMIN_USERS = ['ADMIN_USER_ID_HERE']  # Will be updated with actual admin ID
+    # Admin user IDs
+    ADMIN_USERS = ['olliescott7']
     return user_id in ADMIN_USERS
 
 def get_all_applications():

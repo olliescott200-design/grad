@@ -271,6 +271,14 @@
                 <button class="btn btn-sm btn-outline-primary rounded-pill px-3" title="Helpful">
                   <i class="bi bi-hand-thumbs-up me-1"></i>Helpful
                 </button>
+                {% if user_is_admin and exp.get('id') %}
+                <form method="POST" action="{{ url_for('public.delete_submission_route', submission_id=exp.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this submission?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3" title="Delete (Admin Only)">
+                    <i class="bi bi-trash me-1"></i>Delete
+                  </button>
+                </form>
+                {% endif %}
               </div>
             </div>
           </div>

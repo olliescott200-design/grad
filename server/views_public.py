@@ -399,8 +399,11 @@ def create_blueprint(limiter):
     @bp.route('/experiences')
     def experiences():
         """All experiences page."""
-        with open(data_file, 'r') as f:
-            submissions = json.load(f)
+        current_user = get_current_user()
+        user_id = current_user['id'] if current_user else None
+        user_is_admin = is_admin(user_id) if user_id else False
+        
+        submissions = get_all_submissions()
         experience_items = []
         for sub in submissions:
             content_parts = []
@@ -416,22 +419,23 @@ def create_blueprint(limiter):
                 else:
                     main_content = f"Advice: {advice_text}"
             experience_items.append({
+                "id": sub.get('id'),
                 "content": main_content,
-                "firm_name": sub['company'],
+                "firm_name": sub.get('company'),
                 "quality_score": 0.95,
-                "primary_cat": sub.get('theme', 'other').lower().replace(' ', '_'),
+                "primary_cat": sub.get('theme', 'other').lower().replace(' ', '_') if sub.get('theme') else 'other',
                 "cat_labels": [sub.get('theme', 'Other')],
                 "is_submission": True,
                 "experience_type": sub.get('experience_type', ''),
                 "role": sub.get('role', ''),
-                "timestamp": sub.get('timestamp', ''),
+                "timestamp": sub.get('created_at', ''),
                 "user_name": sub.get('user_name', 'Anonymous'),
                 "source": sub.get('source', 'user'),
                 "pro_tip": sub.get('pro_tip', ''),
                 "advice": advice_text
             })
         experience_items.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
-        return render_template("experiences.html", experiences=experience_items, is_filtered=True)
+        return render_template("experiences.html", experiences=experience_items, is_filtered=True, user_is_admin=user_is_admin)
 
     @bp.route('/tracker')
     @login_required
