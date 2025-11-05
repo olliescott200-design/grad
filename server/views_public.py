@@ -501,4 +501,174 @@ def create_blueprint(limiter):
     def report():
         return render_template('report.html', config=LEGAL_CONFIG)
 
+    @bp.route('/law-match', methods=['GET', 'POST'])
+    def law_match():
+        """Career matching tool to recommend firms based on user profile"""
+        if request.method == 'POST':
+            # Get form data
+            uni = request.form.get('uni', '').strip()
+            wam = float(request.form.get('wam', 0))
+            interest = request.form.get('interest', '')
+            preference = request.form.get('preference', '')
+            experience = request.form.get('experience', '')
+            location = request.form.get('location', 'any')
+            
+            # Firm profiles with attributes for matching
+            firm_profiles = {
+                'Allens': {
+                    'prestige': 95, 'salary': 95, 'worklife': 60, 'training': 90,
+                    'strengths': ['commercial', 'banking', 'litigation', 'infrastructure'],
+                    'locations': ['melbourne', 'sydney', 'brisbane', 'perth'],
+                    'wam_cutoff': 75
+                },
+                'Herbert Smith Freehills': {
+                    'prestige': 95, 'salary': 95, 'worklife': 60, 'training': 90,
+                    'strengths': ['commercial', 'banking', 'litigation', 'infrastructure', 'competition'],
+                    'locations': ['melbourne', 'sydney', 'brisbane', 'perth'],
+                    'wam_cutoff': 75
+                },
+                'King & Wood Mallesons': {
+                    'prestige': 95, 'salary': 95, 'worklife': 65, 'training': 88,
+                    'strengths': ['commercial', 'banking', 'infrastructure', 'competition'],
+                    'locations': ['melbourne', 'sydney', 'brisbane', 'perth'],
+                    'wam_cutoff': 75
+                },
+                'Clayton Utz': {
+                    'prestige': 90, 'salary': 90, 'worklife': 70, 'training': 88,
+                    'strengths': ['commercial', 'litigation', 'employment', 'property', 'infrastructure'],
+                    'locations': ['melbourne', 'sydney', 'brisbane', 'perth', 'adelaide'],
+                    'wam_cutoff': 72
+                },
+                'Gilbert + Tobin': {
+                    'prestige': 92, 'salary': 92, 'worklife': 65, 'training': 90,
+                    'strengths': ['commercial', 'competition', 'litigation', 'tax'],
+                    'locations': ['sydney', 'melbourne'],
+                    'wam_cutoff': 75
+                },
+                'MinterEllison': {
+                    'prestige': 88, 'salary': 88, 'worklife': 72, 'training': 85,
+                    'strengths': ['commercial', 'property', 'employment', 'government'],
+                    'locations': ['melbourne', 'sydney', 'brisbane', 'adelaide', 'perth'],
+                    'wam_cutoff': 70
+                },
+                'Corrs Chambers Westgarth': {
+                    'prestige': 88, 'salary': 88, 'worklife': 70, 'training': 85,
+                    'strengths': ['commercial', 'banking', 'litigation', 'property'],
+                    'locations': ['melbourne', 'sydney', 'brisbane', 'perth'],
+                    'wam_cutoff': 72
+                },
+                'Ashurst': {
+                    'prestige': 85, 'salary': 85, 'worklife': 70, 'training': 82,
+                    'strengths': ['commercial', 'banking', 'infrastructure'],
+                    'locations': ['melbourne', 'sydney', 'brisbane'],
+                    'wam_cutoff': 72
+                },
+                'Lander & Rogers': {
+                    'prestige': 75, 'salary': 75, 'worklife': 85, 'training': 80,
+                    'strengths': ['property', 'commercial', 'family', 'employment'],
+                    'locations': ['melbourne'],
+                    'wam_cutoff': 65
+                },
+                'Colin Biggers & Paisley': {
+                    'prestige': 70, 'salary': 72, 'worklife': 82, 'training': 78,
+                    'strengths': ['property', 'employment', 'commercial', 'family', 'criminal'],
+                    'locations': ['sydney', 'melbourne', 'brisbane'],
+                    'wam_cutoff': 65
+                }
+            }
+            
+            # Calculate match scores for each firm
+            matches = []
+            for firm_name, profile in firm_profiles.items():
+                score = 0
+                reasons = []
+                
+                # University match (30 points)
+                uni_data = FIRM_UNIVERSITY_DATA.get(firm_name, {})
+                uni_percentage = uni_data.get(uni, uni_data.get('Other', 0))
+                if uni_percentage >= 15:
+                    score += 30
+                    reasons.append(f"Strong {uni} representation ({uni_percentage}%)")
+                elif uni_percentage >= 8:
+                    score += 20
+                    reasons.append(f"Good {uni} representation ({uni_percentage}%)")
+                elif uni_percentage >= 3:
+                    score += 10
+                    reasons.append(f"Some {uni} representation ({uni_percentage}%)")
+                
+                # WAM competitiveness (25 points)
+                wam_cutoff = profile['wam_cutoff']
+                if wam >= wam_cutoff + 10:
+                    score += 25
+                    reasons.append(f"Well above typical WAM ({wam_cutoff})")
+                elif wam >= wam_cutoff + 5:
+                    score += 20
+                    reasons.append(f"Above typical WAM ({wam_cutoff})")
+                elif wam >= wam_cutoff:
+                    score += 15
+                    reasons.append(f"Meets WAM expectations ({wam_cutoff})")
+                elif wam >= wam_cutoff - 5:
+                    score += 10
+                    reasons.append(f"Competitive WAM (typical ~{wam_cutoff})")
+                else:
+                    score += 5
+                    reasons.append(f"WAM below typical ({wam_cutoff})")
+                
+                # Practice area match (20 points)
+                if interest in profile['strengths']:
+                    score += 20
+                    area_name = interest.replace('_', ' ').title()
+                    reasons.append(f"Strong in {area_name}")
+                elif interest == 'other':
+                    score += 10
+                
+                # Preference match (15 points)
+                pref_score = profile.get(preference, 70)
+                if pref_score >= 90:
+                    score += 15
+                    reasons.append(f"Excellent for {preference.replace('worklife', 'work-life balance').replace('_', ' ')}")
+                elif pref_score >= 80:
+                    score += 12
+                    reasons.append(f"Very good for {preference.replace('worklife', 'work-life balance').replace('_', ' ')}")
+                elif pref_score >= 70:
+                    score += 8
+                    reasons.append(f"Good for {preference.replace('worklife', 'work-life balance').replace('_', ' ')}")
+                else:
+                    score += 5
+                
+                # Location match (10 points)
+                if location == 'any' or location in profile['locations']:
+                    score += 10
+                    if location != 'any':
+                        reasons.append(f"Has {location.title()} office")
+                
+                # Store match
+                if score > 0:  # Only include firms with some match
+                    matches.append({
+                        'firm': firm_name,
+                        'score': score,
+                        'percentage': min(100, int((score / 100) * 100)),
+                        'reasons': reasons,
+                        'profile': profile
+                    })
+            
+            # Sort by score
+            matches.sort(key=lambda x: x['score'], reverse=True)
+            
+            # Take top 8 matches
+            top_matches = matches[:8]
+            
+            return render_template('law_match_results.html', 
+                                   matches=top_matches,
+                                   user_profile={
+                                       'uni': uni,
+                                       'wam': wam,
+                                       'interest': interest,
+                                       'preference': preference,
+                                       'experience': experience,
+                                       'location': location
+                                   })
+        
+        return render_template('law_match.html')
+
     return bp

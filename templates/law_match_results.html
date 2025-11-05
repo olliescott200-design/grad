@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Your Career Matches – GradGuide{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+  <div class="container text-center">
+    <h1 class="hero-title">Your Firm Matches</h1>
+    <p class="hero-subtitle">Based on your profile, here are our top recommendations</p>
+  </div>
+</div>
+
+<div class="container my-5">
+  <a href="/law-match" class="btn btn-link text-decoration-none mb-4">← Adjust my profile</a>
+
+  <!-- User Profile Summary -->
+  <div class="card mb-5 shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Your Profile</h5>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <strong>University:</strong> {{ user_profile.uni }}
+        </div>
+        <div class="col-md-4">
+          <strong>WAM:</strong> {{ user_profile.wam }}
+        </div>
+        <div class="col-md-4">
+          <strong>Interest:</strong> {{ user_profile.interest.replace('_', ' ').title() }}
+        </div>
+        <div class="col-md-4">
+          <strong>Priority:</strong> {{ user_profile.preference.replace('worklife', 'work-life balance').replace('_', ' ').title() }}
+        </div>
+        <div class="col-md-4">
+          <strong>Experience:</strong> {{ user_profile.experience.replace('_', ' ').title() }}
+        </div>
+        <div class="col-md-4">
+          <strong>Location:</strong> {{ user_profile.location.title() if user_profile.location != 'any' else 'Any' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Match Results -->
+  <h3 class="mb-4">Top {{ matches|length }} Firm Matches</h3>
+  
+  {% if matches %}
+    <div class="row g-4">
+      {% for match in matches %}
+      <div class="col-md-6">
+        <div class="card h-100 shadow-sm hover-shadow">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{{ match.firm }}</h5>
+            <span class="badge bg-light text-primary fs-6">{{ match.percentage }}% Match</span>
+          </div>
+          <div class="card-body">
+            <!-- Match Score Bar -->
+            <div class="mb-3">
+              <div class="progress" style="height: 25px;">
+                <div class="progress-bar bg-success" role="progressbar" 
+                     style="width: {{ match.percentage }}%;" 
+                     aria-valuenow="{{ match.percentage }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                  {{ match.score }}/100 points
+                </div>
+              </div>
+            </div>
+
+            <!-- Why This Match -->
+            <h6 class="mb-2">Why this firm?</h6>
+            <ul class="list-unstyled mb-3">
+              {% for reason in match.reasons %}
+              <li class="mb-1">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>{{ reason }}
+              </li>
+              {% endfor %}
+            </ul>
+
+            <!-- Firm Attributes -->
+            <div class="row g-2 mt-3">
+              <div class="col-6">
+                <small class="text-muted">Prestige</small>
+                <div class="progress" style="height: 8px;">
+                  <div class="progress-bar bg-info" style="width: {{ match.profile.prestige }}%;"></div>
+                </div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">Salary</small>
+                <div class="progress" style="height: 8px;">
+                  <div class="progress-bar bg-success" style="width: {{ match.profile.salary }}%;"></div>
+                </div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">Work-Life Balance</small>
+                <div class="progress" style="height: 8px;">
+                  <div class="progress-bar bg-warning" style="width: {{ match.profile.worklife }}%;"></div>
+                </div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">Training</small>
+                <div class="progress" style="height: 8px;">
+                  <div class="progress-bar bg-primary" style="width: {{ match.profile.training }}%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="mt-3">
+              <a href="/company/{{ match.firm }}" class="btn btn-outline-primary btn-sm w-100">
+                View {{ match.firm }} Profile →
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle me-2"></i>
+      No matches found. Try adjusting your criteria.
+    </div>
+  {% endif %}
+
+  <!-- Disclaimer -->
+  <div class="alert alert-warning mt-5">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <strong>Important:</strong> These recommendations are based on common patterns and general data. 
+    Every application is unique, and you should apply to firms that genuinely interest you regardless of match percentage. 
+    Consider this a starting point for your research, not a definitive guide.
+  </div>
+
+  <!-- CTA Buttons -->
+  <div class="text-center mt-4">
+    <a href="/submit" class="btn btn-primary btn-lg me-2">Share Your Experience</a>
+    <a href="/" class="btn btn-outline-secondary btn-lg">Back to Home</a>
+  </div>
+</div>
+
+<style>
+.hover-shadow {
+  transition: box-shadow 0.3s ease;
+}
+.hover-shadow:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+{% endblock %}

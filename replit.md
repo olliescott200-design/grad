@@ -4,6 +4,22 @@ GradGuide is a production-ready Flask web application for law students and gradu
 
 # Recent Changes
 
+## November 5, 2025
+- **Career Match Feature**: Created intelligent law firm matching system
+  - Multi-factor scoring algorithm (university representation, WAM competitiveness, practice area alignment, preferences)
+  - Scores based on: university match (30pts), WAM (25pts), practice area (20pts), preference alignment (15pts), location (10pts)
+  - Firm profiles include prestige, salary, work-life balance, and training ratings
+  - Results page shows top 8 matches with detailed reasoning and firm attributes
+  - Route: `/law-match` with GET (form) and POST (results) handlers
+- **Submission Validation**: Relaxed requirements to accept any Step 2 content
+  - Now accepts submissions with ANY single field filled (10 fields total)
+  - Removed strict word count and generic phrase checking
+  - Trusts users to provide valuable content
+- **CSRF Security**: Fixed all 6 forms to use proper hidden input field format
+- **WAM Field**: Added to submission form and results display
+
+# Recent Changes (Archive)
+
 ## October 2025: Production Refactoring
 - **Migrated from Flask dev server to Gunicorn** with 2 workers and 4 threads per worker
 - **Implemented app factory pattern** with modular blueprint architecture
@@ -37,9 +53,10 @@ Preferred communication style: Simple, everyday language.
 - **Firm Matching**: Alias-based system for mapping firm variations to canonical names
 
 ## Key Features
-- **Experience Submission System**: Form-based user experience collection
+- **Experience Submission System**: Form-based user experience collection with flexible validation
 - **Data-Assisted Drafting**: CSV-backed auto-population of experience forms
 - **Company Analytics**: Aggregated firm statistics and program information
+- **Career Match Tool**: Intelligent firm recommendation system based on university, WAM, practice area interests, and preferences
 - **Content Filtering**: Answer-focused filtering excluding questions and low-quality posts
 - **Legal Compliance**: Australian compliance pages for user-generated content platforms
 
