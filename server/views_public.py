@@ -396,6 +396,41 @@ def create_blueprint(limiter):
         """API endpoint for grad program data."""
         return jsonify({"firms": load_cards("out/grad_program_signals.csv")})
 
+    @bp.route('/api/company-analytics/<company_name>')
+    def api_company_analytics(company_name):
+        """API endpoint for company-specific analytics."""
+        submissions = get_all_submissions()
+        company_submissions = [s for s in submissions if s.get('company', '').lower() == company_name.lower()]
+        
+        if not company_submissions:
+            return jsonify({"error": "No data available"}), 200
+        
+        # Calculate basic stats
+        total_applications = len(company_submissions)
+        success_count = len([s for s in company_submissions if s.get('outcome') == 'Offer'])
+        success_rate = round((success_count / total_applications) * 100, 1) if total_applications > 0 else 0
+        
+        # Salary data
+        salaries = [int(s.get('salary', 0)) for s in company_submissions 
+                   if s.get('salary') and str(s.get('salary')).replace('$', '').replace(',', '').isdigit()]
+        avg_salary = int(sum(salaries) / len(salaries)) if salaries else None
+        
+        # Popular roles
+        roles = [s.get('role') for s in company_submissions if s.get('role')]
+        role_counts = {}
+        for role in roles:
+            role_counts[role] = role_counts.get(role, 0) + 1
+        popular_roles = sorted(role_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        return jsonify({
+            "company_stats": {
+                "total_applications": total_applications,
+                "success_rate": success_rate,
+                "avg_salary": avg_salary,
+                "popular_roles": [{"role": r[0], "count": r[1]} for r in popular_roles]
+            }
+        })
+
     @bp.route('/experiences')
     def experiences():
         """All experiences page."""
