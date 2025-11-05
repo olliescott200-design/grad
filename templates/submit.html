@@ -182,8 +182,8 @@
                 </div>
 
                 <div class="col-md-6">
-                  <label for="application_year" class="form-label">Year *</label>
-                  <select class="form-select" id="application_year" name="application_year" required>
+                  <label for="application_year" class="form-label">Year</label>
+                  <select class="form-select" id="application_year" name="application_year">
                     <option value="">Select year</option>
                     <option value="2026 Intake">2026 Intake</option>
                     <option value="2025 Intake">2025 Intake</option>
@@ -193,8 +193,8 @@
                 </div>
 
                 <div class="col-md-6">
-                  <label for="outcome" class="form-label">Outcome *</label>
-                  <select class="form-select" id="outcome" name="outcome" required>
+                  <label for="outcome" class="form-label">Outcome</label>
+                  <select class="form-select" id="outcome" name="outcome">
                     <option value="">Select outcome</option>
                     <option value="Offer">✅ Offer</option>
                     <option value="Rejected after Interview">❌ Rejected after Interview</option>
@@ -234,16 +234,16 @@
                 <div class="col-md-6">
                   <label for="wam" class="form-label">WAM (Weighted Average Mark)</label>
                   <input type="text" class="form-control" id="wam" name="wam" 
-                         placeholder="e.g., 75, 80-85, H1">
-                  <small class="text-muted">Optional - can be a number, range, or grade</small>
+                         placeholder="e.g., 75">
+                  <small class="text-muted">Optional</small>
                 </div>
               </div>
             </div>
 
             <!-- Category/Theme Selection -->
             <div class="mb-4 p-3 bg-light rounded">
-              <h5 class="fw-bold mb-3">🎯 Step 2: What do you want to share about? *</h5>
-              <select class="form-select form-select-lg" id="storyTheme" name="theme" required>
+              <h5 class="fw-bold mb-3">🎯 Step 2: What do you want to share about?</h5>
+              <select class="form-select form-select-lg" id="storyTheme" name="theme">
                 <option value="">Choose a topic to get started...</option>
                 <option value="application_process">📝 Application Process (timeline, stages, tips)</option>
                 <option value="interview_experience">💼 Interview Experience (rounds, questions, advice)</option>

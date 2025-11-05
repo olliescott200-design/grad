@@ -6,38 +6,45 @@ def is_productive_story(submission_data):
     """
     Check if a story submission is productive and valuable
     Returns: (is_valid, rejection_reason)
-    
-    NEW APPROACH: Accept if ANY Step 2 field has meaningful content
     """
     
-    # Get ALL possible Step 2 content fields
-    step2_fields = [
-        submission_data.get('timeline', '').strip(),
-        submission_data.get('online_application', '').strip(),
-        submission_data.get('online_assessment', '').strip(),
-        submission_data.get('interview_rounds', '').strip(),
-        submission_data.get('assessment_centre', '').strip(),
-        submission_data.get('what_went_well', '').strip(),
-        submission_data.get('what_could_improve', '').strip(),
-        submission_data.get('advice', '').strip(),
-        submission_data.get('final_thoughts', '').strip(),
-        submission_data.get('salary', '').strip()
+    # Get key fields
+    advice = submission_data.get('advice', '').strip()
+    what_went_well = submission_data.get('what_went_well', '').strip()
+    what_could_improve = submission_data.get('what_could_improve', '').strip()
+    
+    # Combine all text content for checking
+    all_content = f"{advice} {what_went_well} {what_could_improve}".strip()
+    
+    # Rule 1: Check minimum content length (relaxed to 5 characters)
+    if len(all_content) < 5:
+        return False, "Please provide some information to help other students."
+    
+    # Rule 2: Reject if it's ONLY a very short question (more lenient)
+    if all_content.endswith('?') and len(all_content.split()) < 5:
+        return False, "Please share your experience or advice rather than asking questions."
+    
+    # Rule 3: Check for conversation snippets (more lenient - 10 words)
+    if all_content.startswith('"') or all_content.startswith("'"):
+        if len(all_content.split()) < 10:
+            return False, "Please provide complete advice rather than conversation snippets."
+    
+    # Rule 4: Reject generic/templated responses (more lenient - only very short generic ones)
+    generic_phrases = [
+        "be genuine in your interest, prepare thoroughly, and show enthusiasm for learning",
+        "be genuine and prepare thoroughly"
     ]
     
-    # Check if ANY field has content
-    has_any_content = any(field for field in step2_fields if len(field) > 0)
+    content_lower = all_content.lower()
+    for phrase in generic_phrases:
+        if phrase == content_lower.strip():  # Only exact matches of generic templates
+            return False, "Please share specific, personalized advice from your experience."
     
-    if not has_any_content:
-        return False, "Please fill in at least one field in Step 2 to share your experience."
+    # Rule 5: Check for minimum meaningful words (relaxed to 2 words)
+    meaningful_words = [word for word in all_content.split() if len(word) > 3]
+    if len(meaningful_words) < 2:
+        return False, "Please provide a bit more detail."
     
-    # Get the longest field (the one with most content)
-    longest_field = max(step2_fields, key=len)
-    
-    # Very minimal validation - just check it's not a super short question
-    if longest_field.endswith('?') and len(longest_field.split()) < 3:
-        return False, "Please share your experience rather than just asking a question."
-    
-    # Accept everything else - trust users to provide valuable content
     return True, None
 
 
