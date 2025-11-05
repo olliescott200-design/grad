@@ -187,10 +187,10 @@
                   <label for="application_year" class="form-label">Year</label>
                   <select class="form-select" id="application_year" name="application_year">
                     <option value="">Select year</option>
-                    <option value="2026 Intake">2026 Intake</option>
-                    <option value="2025 Intake">2025 Intake</option>
-                    <option value="2024 Intake">2024 Intake</option>
-                    <option value="2023 Intake">2023 Intake</option>
+                    <option value="2026 Intake" {% if form_data and form_data.application_year == '2026 Intake' %}selected{% endif %}>2026 Intake</option>
+                    <option value="2025 Intake" {% if form_data and form_data.application_year == '2025 Intake' %}selected{% endif %}>2025 Intake</option>
+                    <option value="2024 Intake" {% if form_data and form_data.application_year == '2024 Intake' %}selected{% endif %}>2024 Intake</option>
+                    <option value="2023 Intake" {% if form_data and form_data.application_year == '2023 Intake' %}selected{% endif %}>2023 Intake</option>
                   </select>
                 </div>
 
@@ -198,11 +198,11 @@
                   <label for="outcome" class="form-label">Outcome</label>
                   <select class="form-select" id="outcome" name="outcome">
                     <option value="">Select outcome</option>
-                    <option value="Offer">✅ Offer</option>
-                    <option value="Rejected after Interview">❌ Rejected after Interview</option>
-                    <option value="Rejected after Application">❌ Rejected after Application</option>
-                    <option value="No Response">⏸️ No Response</option>
-                    <option value="Still Waiting">⏳ Still Waiting</option>
+                    <option value="Offer" {% if form_data and form_data.outcome == 'Offer' %}selected{% endif %}>✅ Offer</option>
+                    <option value="Rejected after Interview" {% if form_data and form_data.outcome == 'Rejected after Interview' %}selected{% endif %}>❌ Rejected after Interview</option>
+                    <option value="Rejected after Application" {% if form_data and form_data.outcome == 'Rejected after Application' %}selected{% endif %}>❌ Rejected after Application</option>
+                    <option value="No Response" {% if form_data and form_data.outcome == 'No Response' %}selected{% endif %}>⏸️ No Response</option>
+                    <option value="Still Waiting" {% if form_data and form_data.outcome == 'Still Waiting' %}selected{% endif %}>⏳ Still Waiting</option>
                   </select>
                 </div>
 
@@ -248,11 +248,11 @@
               <h5 class="fw-bold mb-3">🎯 Step 2: What do you want to share about?</h5>
               <select class="form-select form-select-lg" id="storyTheme" name="theme">
                 <option value="">Choose a topic to get started...</option>
-                <option value="application_process">📝 Application Process (timeline, stages, tips)</option>
-                <option value="interview_experience">💼 Interview Experience (rounds, questions, advice)</option>
-                <option value="culture_environment">🏢 Culture & Environment (work culture, team, vibe)</option>
-                <option value="pay_benefits">💰 Pay & Benefits (salary, perks, compensation)</option>
-                <option value="general_advice">💡 General Advice (overall tips and insights)</option>
+                <option value="application_process" {% if form_data and form_data.theme == 'application_process' %}selected{% endif %}>📝 Application Process (timeline, stages, tips)</option>
+                <option value="interview_experience" {% if form_data and form_data.theme == 'interview_experience' %}selected{% endif %}>💼 Interview Experience (rounds, questions, advice)</option>
+                <option value="culture_environment" {% if form_data and form_data.theme == 'culture_environment' %}selected{% endif %}>🏢 Culture & Environment (work culture, team, vibe)</option>
+                <option value="pay_benefits" {% if form_data and form_data.theme == 'pay_benefits' %}selected{% endif %}>💰 Pay & Benefits (salary, perks, compensation)</option>
+                <option value="general_advice" {% if form_data and form_data.theme == 'general_advice' %}selected{% endif %}>💡 General Advice (overall tips and insights)</option>
               </select>
               <div class="form-text mt-2">
                 <i class="bi bi-info-circle me-1"></i>Select a topic - the form will then show you the relevant questions
