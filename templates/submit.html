@@ -166,7 +166,8 @@
                 <div class="col-md-6">
                   <label for="company" class="form-label">Company/Firm *</label>
                   <input type="text" class="form-control" id="company" name="company" required 
-                         list="companyList" placeholder="e.g., Allens, HSF, G+T">
+                         list="companyList" placeholder="e.g., Allens, HSF, G+T"
+                         value="{{ form_data.company if form_data else '' }}">
                   <datalist id="companyList">
                     {% for company in company_list %}
                     <option value="{{ company }}">
@@ -178,7 +179,8 @@
                 <div class="col-md-6">
                   <label for="role" class="form-label">Position *</label>
                   <input type="text" class="form-control" id="role" name="role" required 
-                         placeholder="e.g., Summer Clerk">
+                         placeholder="e.g., Summer Clerk"
+                         value="{{ form_data.role if form_data else '' }}">
                 </div>
 
                 <div class="col-md-6">
@@ -208,12 +210,12 @@
                   <label for="location" class="form-label">Location</label>
                   <select class="form-select" id="location" name="location">
                     <option value="">Select location</option>
-                    <option value="Sydney">Sydney</option>
-                    <option value="Melbourne">Melbourne</option>
-                    <option value="Brisbane">Brisbane</option>
-                    <option value="Perth">Perth</option>
-                    <option value="Adelaide">Adelaide</option>
-                    <option value="Canberra">Canberra</option>
+                    <option value="Sydney" {% if form_data and form_data.location == 'Sydney' %}selected{% endif %}>Sydney</option>
+                    <option value="Melbourne" {% if form_data and form_data.location == 'Melbourne' %}selected{% endif %}>Melbourne</option>
+                    <option value="Brisbane" {% if form_data and form_data.location == 'Brisbane' %}selected{% endif %}>Brisbane</option>
+                    <option value="Perth" {% if form_data and form_data.location == 'Perth' %}selected{% endif %}>Perth</option>
+                    <option value="Adelaide" {% if form_data and form_data.location == 'Adelaide' %}selected{% endif %}>Adelaide</option>
+                    <option value="Canberra" {% if form_data and form_data.location == 'Canberra' %}selected{% endif %}>Canberra</option>
                   </select>
                 </div>
 
@@ -221,20 +223,21 @@
                   <label for="university" class="form-label">University</label>
                   <select class="form-select" id="university" name="university">
                     <option value="">Select university</option>
-                    <option value="University of Melbourne">University of Melbourne</option>
-                    <option value="University of Sydney">University of Sydney</option>
-                    <option value="UNSW">UNSW</option>
-                    <option value="Monash University">Monash University</option>
-                    <option value="ANU">ANU</option>
-                    <option value="UQ">UQ</option>
-                    <option value="Other">Other</option>
+                    <option value="University of Melbourne" {% if form_data and form_data.university == 'University of Melbourne' %}selected{% endif %}>University of Melbourne</option>
+                    <option value="University of Sydney" {% if form_data and form_data.university == 'University of Sydney' %}selected{% endif %}>University of Sydney</option>
+                    <option value="UNSW" {% if form_data and form_data.university == 'UNSW' %}selected{% endif %}>UNSW</option>
+                    <option value="Monash University" {% if form_data and form_data.university == 'Monash University' %}selected{% endif %}>Monash University</option>
+                    <option value="ANU" {% if form_data and form_data.university == 'ANU' %}selected{% endif %}>ANU</option>
+                    <option value="UQ" {% if form_data and form_data.university == 'UQ' %}selected{% endif %}>UQ</option>
+                    <option value="Other" {% if form_data and form_data.university == 'Other' %}selected{% endif %}>Other</option>
                   </select>
                 </div>
 
                 <div class="col-md-6">
                   <label for="wam" class="form-label">WAM (Weighted Average Mark)</label>
                   <input type="text" class="form-control" id="wam" name="wam" 
-                         placeholder="e.g., 75">
+                         placeholder="e.g., 75"
+                         value="{{ form_data.wam if form_data else '' }}">
                   <small class="text-muted">Optional</small>
                 </div>
               </div>
@@ -271,25 +274,25 @@
               <div class="mb-3">
                 <label for="timeline" class="form-label">Timeline *</label>
                 <textarea class="form-control theme-required" id="timeline" name="timeline" rows="2" 
-                         placeholder="When did you apply? How long until you heard back?"></textarea>
+                         placeholder="When did you apply? How long until you heard back?">{{ form_data.timeline if form_data else '' }}</textarea>
               </div>
 
               <div class="mb-3">
                 <label for="online_application" class="form-label">Online Application</label>
                 <textarea class="form-control" id="online_application" name="online_application" rows="2" 
-                         placeholder="What documents did you need? CV, cover letter, transcript?"></textarea>
+                         placeholder="What documents did you need? CV, cover letter, transcript?">{{ form_data.online_application if form_data else '' }}</textarea>
               </div>
 
               <div class="mb-3">
                 <label for="online_assessment" class="form-label">Online Assessment</label>
                 <textarea class="form-control" id="online_assessment" name="online_assessment" rows="2" 
-                         placeholder="Any online tests? Type, difficulty, how to prepare?"></textarea>
+                         placeholder="Any online tests? Type, difficulty, how to prepare?">{{ form_data.online_assessment if form_data else '' }}</textarea>
               </div>
 
               <div class="mb-3">
                 <label for="advice" class="form-label">Application Tips *</label>
                 <textarea class="form-control theme-required" id="advice_app" name="advice" rows="3" 
-                         placeholder="Your best advice for the application process?"></textarea>
+                         placeholder="Your best advice for the application process?">{{ form_data.advice if form_data else '' }}</textarea>
               </div>
             </div>
 
@@ -300,31 +303,31 @@
               <div class="mb-3">
                 <label for="interview_rounds" class="form-label">Interview Details *</label>
                 <textarea class="form-control theme-required" id="interview_rounds" name="interview_rounds" rows="3" 
-                         placeholder="How many rounds? Who interviewed you? What types of questions?"></textarea>
+                         placeholder="How many rounds? Who interviewed you? What types of questions?">{{ form_data.interview_rounds if form_data else '' }}</textarea>
               </div>
 
               <div class="mb-3">
                 <label for="assessment_centre" class="form-label">Assessment Centre</label>
                 <textarea class="form-control" id="assessment_centre" name="assessment_centre" rows="2" 
-                         placeholder="Group exercises, presentations, case studies? Describe the format."></textarea>
+                         placeholder="Group exercises, presentations, case studies? Describe the format.">{{ form_data.assessment_centre if form_data else '' }}</textarea>
               </div>
 
               <div class="mb-3">
                 <label for="what_went_well" class="form-label">What Went Well</label>
                 <textarea class="form-control" id="what_went_well" name="what_went_well" rows="2" 
-                         placeholder="What did you do well in the interview?"></textarea>
+                         placeholder="What did you do well in the interview?">{{ form_data.what_went_well if form_data else '' }}</textarea>
               </div>
 
               <div class="mb-3">
                 <label for="what_could_improve" class="form-label">What Could Be Better</label>
                 <textarea class="form-control" id="what_could_improve" name="what_could_improve" rows="2" 
-                         placeholder="What would you do differently next time?"></textarea>
+                         placeholder="What would you do differently next time?">{{ form_data.what_could_improve if form_data else '' }}</textarea>
               </div>
 
               <div class="mb-3">
                 <label for="advice" class="form-label">Interview Tips *</label>
                 <textarea class="form-control theme-required" id="advice_int" name="advice" rows="3" 
-                         placeholder="Your best advice for interview preparation?"></textarea>
+                         placeholder="Your best advice for interview preparation?">{{ form_data.advice if form_data else '' }}</textarea>
               </div>
             </div>
 
@@ -364,7 +367,8 @@
               <div class="mb-3">
                 <label for="salary" class="form-label">Salary/Compensation *</label>
                 <input type="text" class="form-control theme-required" id="salary" name="salary" 
-                       placeholder="e.g., $75,000, $80k + super">
+                       placeholder="e.g., $75,000, $80k + super"
+                       value="{{ form_data.salary if form_data else '' }}">
               </div>
 
               <div class="mb-3">
@@ -405,7 +409,7 @@
               <div class="mb-3">
                 <label for="final_thoughts" class="form-label">Final Thoughts</label>
                 <textarea class="form-control" id="final_thoughts" name="final_thoughts" rows="2" 
-                         placeholder="Any other insights or tips?"></textarea>
+                         placeholder="Any other insights or tips?">{{ form_data.final_thoughts if form_data else '' }}</textarea>
               </div>
             </div>
 
