@@ -265,6 +265,26 @@ def create_submission(user_id, submission_data):
         return dict(submission)
     return None
 
+def delete_submission(submission_id):
+    """Delete a submission by ID (admin only)"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    cur.execute("DELETE FROM submissions WHERE id = %s RETURNING id", (submission_id,))
+    deleted = cur.fetchone()
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return deleted is not None
+
+def is_admin(user_id):
+    """Check if a user is an admin"""
+    # Admin user IDs - replace with actual admin user ID
+    ADMIN_USERS = ['ADMIN_USER_ID_HERE']  # Will be updated with actual admin ID
+    return user_id in ADMIN_USERS
+
 def get_all_applications():
     """Get all applications for analytics"""
     conn = get_db_connection()

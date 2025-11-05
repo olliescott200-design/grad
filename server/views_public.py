@@ -17,7 +17,7 @@ from legal_config import LEGAL_CONFIG, NOT_ADVICE_DISCLAIMER
 from db_auth import (
     get_user_applications, create_application, update_application,
     delete_application, get_all_submissions, create_submission, 
-    get_all_applications
+    get_all_applications, delete_submission, is_admin
 )
 from auth_utils import (
     get_current_user, login_required, create_user,
@@ -247,6 +247,30 @@ def create_blueprint(limiter):
 
         company_list = sorted(list(FIRM_ALIASES.keys()))
         return render_template("submit.html", user_id=user_id, user_name=user_name, company_list=company_list)
+
+    @bp.route('/delete-submission/<int:submission_id>', methods=['POST'])
+    @login_required
+    def delete_submission_route(submission_id):
+        """Delete a submission (admin only)."""
+        current_user = get_current_user()
+        if not current_user:
+            flash('Please log in.', 'error')
+            return redirect(url_for('public.login'))
+        
+        user_id = current_user['id']
+        
+        # Check if user is admin
+        if not is_admin(user_id):
+            flash('Unauthorized access.', 'error')
+            return redirect(url_for('public.experiences'))
+        
+        # Delete the submission
+        if delete_submission(submission_id):
+            flash('✅ Submission deleted successfully.', 'success')
+        else:
+            flash('❌ Failed to delete submission.', 'error')
+        
+        return redirect(url_for('public.experiences'))
 
     @bp.route('/company/<name>')
     def company_page(name):
