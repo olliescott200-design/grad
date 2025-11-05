@@ -80,6 +80,9 @@ def create_app():
 
     @app.errorhandler(500)
     def server_error(e):
+        import traceback
+        app.logger.error(f"500 Error: {str(e)}")
+        app.logger.error(traceback.format_exc())
         return render_template("500.html"), 500
     
     @app.errorhandler(429)
