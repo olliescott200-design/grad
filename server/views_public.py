@@ -342,6 +342,7 @@ def create_blueprint(limiter):
         current_user = get_current_user()
         user_id = current_user['id'] if current_user else None
         user_name = current_user['username'] if current_user else None
+        user_is_admin = is_admin(user_id) if user_id else False
 
         return render_template('company.html',
                                company=name,
@@ -350,7 +351,8 @@ def create_blueprint(limiter):
                                firm_data=firm_data,
                                category_labels=category_labels,
                                user_id=user_id,
-                               user_name=user_name)
+                               user_name=user_name,
+                               user_is_admin=user_is_admin)
 
     @bp.route('/companies')
     def companies():

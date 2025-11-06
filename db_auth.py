@@ -280,10 +280,27 @@ def delete_submission(submission_id):
     return deleted is not None
 
 def is_admin(user_id):
-    """Check if a user is an admin"""
-    # Admin user IDs
-    ADMIN_USERS = ['olliescott7']
-    return user_id in ADMIN_USERS
+    """Check if a user is an admin based on their username"""
+    if not user_id:
+        return False
+    
+    # Admin usernames
+    ADMIN_USERNAMES = ['olliescott7']
+    
+    # Get user's username from database
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT username FROM users WHERE id = %s", (user_id,))
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+    
+    if not result:
+        return False
+    
+    # RealDictRow behaves like a dict
+    username = result.get('username') if hasattr(result, 'get') else result['username']
+    return username in ADMIN_USERNAMES
 
 def get_all_applications():
     """Get all applications for analytics"""
