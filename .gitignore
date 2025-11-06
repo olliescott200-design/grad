@@ -9,3 +9,8 @@ __pycache__/
 node_modules/
 .next/
 dist/
+
+# Whirlpool scrape data - do not commit
+whirlpool_*
+law_whirlpool_*.csv
+data/
