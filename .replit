@@ -16,10 +16,6 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 34423
-externalPort = 3000
-
-[[ports]]
 localPort = 40987
 externalPort = 3001
 
@@ -56,5 +52,5 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "gunicorn main:app --bind 0.0.0.0:5000 --workers 2 --threads 4 --timeout 60 --access-logfile - --error-logfile -"
+args = "gunicorn main:app --bind 0.0.0.0:5000 --workers 1 --threads 4 --timeout 60 --access-logfile - --error-logfile -"
 waitForPort = 5000
