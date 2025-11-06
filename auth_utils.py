@@ -194,9 +194,15 @@ def get_current_user():
     """Get current logged-in user from session"""
     user_id = session.get('user_id')
     if not user_id:
+        print(f"DEBUG: No user_id in session. Session data: {dict(session)}")
         return None
     
-    return get_user_by_id(user_id)
+    user = get_user_by_id(user_id)
+    if user:
+        print(f"DEBUG: Found user: {user['username']}")
+    else:
+        print(f"DEBUG: user_id {user_id} in session but user not found in DB")
+    return user
 
 def login_required(f):
     """Decorator to require login for a route"""
