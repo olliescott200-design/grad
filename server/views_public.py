@@ -339,12 +339,18 @@ def create_blueprint(limiter):
         else:
             company_stats = None
 
+        current_user = get_current_user()
+        user_id = current_user['id'] if current_user else None
+        user_name = current_user['username'] if current_user else None
+
         return render_template('company.html',
                                company=name,
                                entries=company_entries,
                                stats=company_stats,
                                firm_data=firm_data,
-                               category_labels=category_labels)
+                               category_labels=category_labels,
+                               user_id=user_id,
+                               user_name=user_name)
 
     @bp.route('/companies')
     def companies():
@@ -389,7 +395,12 @@ def create_blueprint(limiter):
 
         companies_with_stories = [c for c in companies_dict.values() if c['total_stories'] > 0]
         firms = sorted(companies_with_stories, key=lambda x: x['total_stories'], reverse=True)
-        return render_template("companies.html", firms=firms)
+        
+        current_user = get_current_user()
+        user_id = current_user['id'] if current_user else None
+        user_name = current_user['username'] if current_user else None
+        
+        return render_template("companies.html", firms=firms, user_id=user_id, user_name=user_name)
 
     @bp.route('/api/grad-data')
     def api_grad_data():
