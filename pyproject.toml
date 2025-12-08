@@ -6,7 +6,7 @@ authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3.10.0,<3.11"
-replit = "^3.2.4"
+replit = "^4.1.2"
 flask = "^3.1.1"
 pandas = "^2.3.1"
 werkzeug = "^3.1.3"
